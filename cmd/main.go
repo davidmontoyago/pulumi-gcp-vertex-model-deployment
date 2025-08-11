@@ -28,7 +28,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = provider.Run(context.Background(), "gcp-vertex-model-deployment", "0.2.0")
+	err = provider.Run(context.Background(), "gcp-vertex-model-deployment", "0.3.0")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error running provider: %s", err.Error())
 		os.Exit(1)

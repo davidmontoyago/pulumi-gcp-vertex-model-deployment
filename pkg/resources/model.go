@@ -17,15 +17,16 @@ func (VertexModelDeployment) Annotate(a infer.Annotator) {
 }
 
 type VertexModelDeploymentArgs struct {
-	ProjectID      string `pulumi:"projectId"`
-	Region         string `pulumi:"region"`
-	EndpointID     string `pulumi:"endpointId"`
-	ModelImageURL  string `pulumi:"modelImageUrl"`
-	MachineType    string `pulumi:"machineType,optional"`
-	MinReplicas    int    `pulumi:"minReplicas,optional"`
-	MaxReplicas    int    `pulumi:"maxReplicas,optional"`
-	TrafficPercent int    `pulumi:"trafficPercent,optional"`
-	ServiceAccount string `pulumi:"serviceAccount,optional"`
+	ProjectID      string            `pulumi:"projectId"`
+	Region         string            `pulumi:"region"`
+	EndpointID     string            `pulumi:"endpointId"`
+	ModelImageURL  string            `pulumi:"modelImageUrl"`
+	MachineType    string            `pulumi:"machineType,optional"`
+	MinReplicas    int               `pulumi:"minReplicas,optional"`
+	MaxReplicas    int               `pulumi:"maxReplicas,optional"`
+	TrafficPercent int               `pulumi:"trafficPercent,optional"`
+	ServiceAccount string            `pulumi:"serviceAccount,optional"`
+	Labels         map[string]string `pulumi:"labels,optional"`
 }
 
 func (args *VertexModelDeploymentArgs) Annotate(a infer.Annotator) {
@@ -75,7 +76,7 @@ func (VertexModelDeployment) Create(
 		}, nil
 	}
 
-	// With Application Default Credentials
+	// Vertex endpoint client with Application Default Credentials
 	client, err := aiplatform.NewEndpointClient(ctx)
 	if err != nil {
 		return infer.CreateResponse[VertexModelDeploymentState]{},
@@ -83,7 +84,7 @@ func (VertexModelDeployment) Create(
 	}
 	defer client.Close()
 
-	// With Application Default Credentials
+	// Vertex model client with Application Default Credentials
 	modelClient, err := aiplatform.NewModelClient(ctx)
 	if err != nil {
 		return infer.CreateResponse[VertexModelDeploymentState]{},
@@ -92,22 +93,42 @@ func (VertexModelDeployment) Create(
 	defer modelClient.Close()
 
 	modelUploadOp, err := modelClient.UploadModel(ctx, &aiplatformpb.UploadModelRequest{
-		Parent: fmt.Sprintf("projects/%s/locations/%s", req.Inputs.ProjectID, req.Inputs.Region),
+		// TODO support non traditional models
+		// Endpoint to which the model is attached can be regional or global
+		Parent: fmt.Sprintf("projects/%s/locations/global", req.Inputs.ProjectID),
+		// Parent: fmt.Sprintf("projects/%s/locations/%s", req.Inputs.Region),
 		Model: &aiplatformpb.Model{
 			DisplayName: req.Name,
+			Description: "Uploaded model for " + req.Inputs.ModelImageURL,
 			ContainerSpec: &aiplatformpb.ModelContainerSpec{
-				ImageUri: req.Inputs.ModelImageURL,
-				// Optional: specify health and prediction routes
-				HealthRoute:  "/health",
-				PredictRoute: "/predict",
+				ImageUri:     req.Inputs.ModelImageURL,
+				HealthRoute:  "/v1/models",               // Standard TF Serving health check
+				PredictRoute: "/v1/models/model:predict", // Standard TF Serving prediction route
+				Env: []*aiplatformpb.EnvVar{
+					{
+						Name:  "MODEL_NAME",
+						Value: "model",
+					},
+					{
+						Name:  "MODEL_IMAGE_URL",
+						Value: req.Inputs.ModelImageURL,
+					},
+				},
+				// TODO: Add support for custom ports if needed
+				// Ports: []*aiplatformpb.Port{
+				// 	{
+				// 		ContainerPort: 8501, // Standard TF Serving HTTP port
+				// 	},
+				// },
 			},
+			Labels: req.Inputs.Labels,
 			// Optional: specify artifact URI if you have model files in GCS
 			// ArtifactUri: "gs://your-bucket/model-artifacts/",
 		},
 	})
 	if err != nil {
 		return infer.CreateResponse[VertexModelDeploymentState]{},
-			fmt.Errorf("failed to upload model: %w", err)
+			fmt.Errorf("failed to upload model again and again!!!!!!: %w", err)
 	}
 
 	// Wait for model upload to complete
@@ -120,7 +141,8 @@ func (VertexModelDeployment) Create(
 	// Build the deployment request
 	deployedModel := &aiplatformpb.DeployedModel{
 		// Expected format: "projects/%s/locations/%s/models/%s"
-		Model: modelUploadResult.GetModel(),
+		Model:       modelUploadResult.GetModel(),
+		DisplayName: req.Name,
 		PredictionResources: &aiplatformpb.DeployedModel_DedicatedResources{
 			DedicatedResources: &aiplatformpb.DedicatedResources{
 				MachineSpec: &aiplatformpb.MachineSpec{

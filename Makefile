@@ -1,4 +1,4 @@
-VERSION         := 0.2.0
+VERSION         := 0.3.0
 PROVIDER_NAME   := vertex-model-deployment
 PROVIDER_PATH   := github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment
 
@@ -13,6 +13,7 @@ test: build
 
 clean:
 	rm -rf ./sdk/*
+	rm -rf ./build/*
 	go mod tidy
 	go mod verify
 
@@ -36,4 +37,4 @@ gen-sdk: build
 	@pulumi package gen-sdk ./build/pulumi-resource-$(PROVIDER_NAME)
 	@echo "SDKs generated successfully"
 	cd sdk/go && go mod init github.com/davidmontoyago/gcp-vertex-model-deployment/sdk/go && go mod tidy
-	pulumi plugin install resource gcp-vertex-model-deployment v0.2.0 -f ./build/pulumi-resource-$(PROVIDER_NAME)
+	pulumi plugin install resource gcp-vertex-model-deployment v$(VERSION) -f ./build/pulumi-resource-$(PROVIDER_NAME)

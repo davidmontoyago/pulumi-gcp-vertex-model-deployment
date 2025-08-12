@@ -8,6 +8,7 @@ import (
 	"github.com/pulumi/pulumi-go-provider/infer"
 
 	"github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment/pkg/resources"
+	"github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment/pkg/version"
 )
 
 func main() {
@@ -16,7 +17,7 @@ func main() {
 			infer.Resource(&resources.VertexModelDeployment{}),
 		).
 		WithNamespace("davidmontoyago").
-		WithDisplayName("gcp-vertex-model-deployment").
+		WithDisplayName("pulumi-gcp-vertex-model-deployment").
 		WithLicense("Apache-2.0").
 		WithKeywords("pulumi", "gcp", "vertex", "model").
 		WithDescription("Deploy AI models to Vertex endpoints").
@@ -28,7 +29,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = provider.Run(context.Background(), "gcp-vertex-model-deployment", "0.3.0")
+	// Name of the pulumi plugin.
+	pluginName := "gcp-vertex-model-deployment"
+	err = provider.Run(context.Background(), pluginName, version.Version)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error running provider: %s", err.Error())
 		os.Exit(1)

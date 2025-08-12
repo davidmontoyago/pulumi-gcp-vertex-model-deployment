@@ -1,6 +1,9 @@
-VERSION         := 0.3.0
-PROVIDER_NAME   := vertex-model-deployment
-PROVIDER_PATH   := github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment
+GOOS							?= $${GOOS:-linux}
+GOARCH						?= $${GOARCH:-amd64}
+PROVIDER_VERSION	?= $${PROVIDER_VERSION:-0.0.1}
+PROVIDER_NAME			:= vertex-model-deployment
+PROVIDER_PATH			:= github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment
+PLUGIN_NAME				:= pulumi-resource-$(PROVIDER_NAME)-$(GOOS)-$(GOARCH)
 
 .PHONY: build clean test lint
 
@@ -12,10 +15,12 @@ test: build
 	go test -v -race -count=1 -timeout=30s -coverprofile=coverage.out ./...
 
 clean:
-	rm -rf ./sdk/*
-	rm -rf ./build/*
 	go mod tidy
 	go mod verify
+
+pulumi-clean:
+	rm -rf ./sdk/*
+	rm -rf ./build/*
 
 lint:
 	docker run --rm -v $$(pwd):/app \
@@ -27,14 +32,26 @@ lint:
 upgrade:
 	go get -u ./...
 
-install: gen-sdk
-	@echo "Installing provider..."
-	@cp ./build/pulumi-resource-$(PROVIDER_NAME) $(shell go env GOPATH)/bin/
-	@echo "Provider installed successfully"
-
 gen-sdk: build
 	@echo "Generating SDKs..."
 	@pulumi package gen-sdk ./build/pulumi-resource-$(PROVIDER_NAME)
 	@echo "SDKs generated successfully"
-	cd sdk/go && go mod init github.com/davidmontoyago/gcp-vertex-model-deployment/sdk/go && go mod tidy
-	pulumi plugin install resource gcp-vertex-model-deployment v$(VERSION) -f ./build/pulumi-resource-$(PROVIDER_NAME)
+	cd sdk/go && go mod init github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment/sdk/go && go mod tidy
+
+plugin-local: gen-sdk
+	@echo "Installing provider..."
+	@cp ./build/pulumi-resource-$(PROVIDER_NAME) $(shell go env GOPATH)/bin/
+	@echo "Provider installed successfully"
+	@mkdir -p ~/.pulumi/plugins/resource-gcp-vertex-model-deployment-v$(PROVIDER_VERSION)/
+	@cp ./build/pulumi-resource-$(PROVIDER_NAME) ~/.pulumi/plugins/resource-gcp-vertex-model-deployment-v$(PROVIDER_VERSION)/
+	@cp ./PulumiPlugin.yaml ~/.pulumi/plugins/resource-gcp-vertex-model-deployment-v$(PROVIDER_VERSION)/
+	@echo "Plugin installed successfully"
+
+plugin: build
+	@set -eu && \
+		mkdir -p ./build && \
+		echo "Building $(PROVIDER_NAME) with version $(PROVIDER_VERSION): $(PLUGIN_NAME)" && \
+		CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build -trimpath \
+			-ldflags "-s -w -X $(PROVIDER_PATH)/pkg/version.Version=v$(PROVIDER_VERSION)" \
+			-o ./build/$(PLUGIN_NAME) ./cmd
+	@echo "Plugin built successfully"

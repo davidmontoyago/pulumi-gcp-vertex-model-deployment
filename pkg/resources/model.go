@@ -2,12 +2,16 @@ package resources
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	aiplatform "cloud.google.com/go/aiplatform/apiv1"
 	"cloud.google.com/go/aiplatform/apiv1/aiplatformpb"
+	gax "github.com/googleapis/gax-go/v2"
+	"github.com/googleapis/gax-go/v2/apierror"
 	"github.com/pulumi/pulumi-go-provider/infer"
+	"google.golang.org/api/option"
 )
 
 type VertexModelDeployment struct{}
@@ -17,23 +21,25 @@ func (VertexModelDeployment) Annotate(a infer.Annotator) {
 }
 
 type VertexModelDeploymentArgs struct {
-	ProjectID      string            `pulumi:"projectId"`
-	Region         string            `pulumi:"region"`
-	EndpointID     string            `pulumi:"endpointId"`
-	ModelImageURL  string            `pulumi:"modelImageUrl"`
-	MachineType    string            `pulumi:"machineType,optional"`
-	MinReplicas    int               `pulumi:"minReplicas,optional"`
-	MaxReplicas    int               `pulumi:"maxReplicas,optional"`
-	TrafficPercent int               `pulumi:"trafficPercent,optional"`
-	ServiceAccount string            `pulumi:"serviceAccount,optional"`
-	Labels         map[string]string `pulumi:"labels,optional"`
+	ProjectID               string            `pulumi:"projectId"`
+	Region                  string            `pulumi:"region"`
+	EndpointID              string            `pulumi:"endpointId"`
+	ModelImageURL           string            `pulumi:"modelImageUrl"`
+	ModelArtifactsBucketURI string            `pulumi:"modelArtifactsBucketUri"`
+	MachineType             string            `pulumi:"machineType,optional"`
+	MinReplicas             int               `pulumi:"minReplicas,optional"`
+	MaxReplicas             int               `pulumi:"maxReplicas,optional"`
+	TrafficPercent          int               `pulumi:"trafficPercent,optional"`
+	ServiceAccount          string            `pulumi:"serviceAccount,optional"`
+	Labels                  map[string]string `pulumi:"labels,optional"`
 }
 
 func (args *VertexModelDeploymentArgs) Annotate(a infer.Annotator) {
 	a.Describe(&args.ProjectID, "Google Cloud Project ID")
 	a.Describe(&args.Region, "Google Cloud region")
 	a.Describe(&args.EndpointID, "Vertex AI Endpoint ID")
-	a.Describe(&args.ModelImageURL, "Vertex AI Model Image URL")
+	a.Describe(&args.ModelImageURL, "Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers")
+	a.Describe(&args.ModelArtifactsBucketURI, "Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts")
 	a.Describe(&args.MachineType, "Machine type for deployment")
 	a.Describe(&args.MinReplicas, "Minimum number of replicas")
 	a.Describe(&args.MaxReplicas, "Maximum number of replicas")
@@ -76,8 +82,12 @@ func (VertexModelDeployment) Create(
 		}, nil
 	}
 
+	// Regional models and endpoints require regional endpoints
+	apiEndpoint := fmt.Sprintf("%s-aiplatform.googleapis.com:443", req.Inputs.Region)
+	clientEndpointOpt := option.WithEndpoint(apiEndpoint)
+
 	// Vertex endpoint client with Application Default Credentials
-	client, err := aiplatform.NewEndpointClient(ctx)
+	client, err := aiplatform.NewEndpointClient(ctx, clientEndpointOpt)
 	if err != nil {
 		return infer.CreateResponse[VertexModelDeploymentState]{},
 			fmt.Errorf("failed to create endpoint client: %w", err)
@@ -85,7 +95,7 @@ func (VertexModelDeployment) Create(
 	defer client.Close()
 
 	// Vertex model client with Application Default Credentials
-	modelClient, err := aiplatform.NewModelClient(ctx)
+	modelClient, err := aiplatform.NewModelClient(ctx, clientEndpointOpt)
 	if err != nil {
 		return infer.CreateResponse[VertexModelDeploymentState]{},
 			fmt.Errorf("failed to create model client: %w", err)
@@ -93,49 +103,63 @@ func (VertexModelDeployment) Create(
 	defer modelClient.Close()
 
 	modelUploadOp, err := modelClient.UploadModel(ctx, &aiplatformpb.UploadModelRequest{
-		// TODO support non traditional models
-		// Endpoint to which the model is attached can be regional or global
-		Parent: fmt.Sprintf("projects/%s/locations/global", req.Inputs.ProjectID),
-		// Parent: fmt.Sprintf("projects/%s/locations/%s", req.Inputs.Region),
+		// TODO support non traditional / global models
+		// Endpoint to which the model is attached. It can be regional or global, depending on the model type.
+		Parent:         fmt.Sprintf("projects/%s/locations/%s", req.Inputs.ProjectID, req.Inputs.Region),
+		ServiceAccount: req.Inputs.ServiceAccount,
 		Model: &aiplatformpb.Model{
 			DisplayName: req.Name,
 			Description: "Uploaded model for " + req.Inputs.ModelImageURL,
 			ContainerSpec: &aiplatformpb.ModelContainerSpec{
-				ImageUri:     req.Inputs.ModelImageURL,
-				HealthRoute:  "/v1/models",               // Standard TF Serving health check
-				PredictRoute: "/v1/models/model:predict", // Standard TF Serving prediction route
-				Env: []*aiplatformpb.EnvVar{
-					{
-						Name:  "MODEL_NAME",
-						Value: "model",
-					},
-					{
-						Name:  "MODEL_IMAGE_URL",
-						Value: req.Inputs.ModelImageURL,
-					},
+				ImageUri: req.Inputs.ModelImageURL,
+				// TODO make me configurable
+				Args: []string{
+					"--allow_precompilation=false",
+					"--disable_optimizer=true",
+					"--saved_model_tags='serve,tpu'",
+					"--use_tfrt=true",
 				},
-				// TODO: Add support for custom ports if needed
-				// Ports: []*aiplatformpb.Port{
-				// 	{
-				// 		ContainerPort: 8501, // Standard TF Serving HTTP port
-				// 	},
-				// },
 			},
 			Labels: req.Inputs.Labels,
-			// Optional: specify artifact URI if you have model files in GCS
-			// ArtifactUri: "gs://your-bucket/model-artifacts/",
+			// May be optional for custom models but required for TensorFlow pre-built images.
+			// See:
+			// - https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts#framework-requirements
+			ArtifactUri: req.Inputs.ModelArtifactsBucketURI,
 		},
-	})
+	}, gax.WithTimeout(5*time.Minute))
 	if err != nil {
+		var ae *apierror.APIError
+		if errors.As(err, &ae) {
+			fmt.Printf("Model upload returned APIError details: %v\n", err)
+			fmt.Printf("APIError reason: %v\n", ae.Reason())
+			fmt.Printf("APIError details : %v\n", ae.Details())
+			// If a gRPC transport was used you can extract the
+			// google.golang.org/grpc/status.Status from the error
+			fmt.Printf("APIError GRPCStatus: %+v\n", ae.GRPCStatus())
+			fmt.Printf("APIError HTTPCode: %+v\n", ae.HTTPCode())
+		}
 		return infer.CreateResponse[VertexModelDeploymentState]{},
 			fmt.Errorf("failed to upload model again and again!!!!!!: %w", err)
 	}
 
-	// Wait for model upload to complete
-	modelUploadResult, err := modelUploadOp.Wait(ctx)
+	modelUploadResult, err := modelUploadOp.Wait(context.Background(), gax.WithTimeout(10*time.Minute))
 	if err != nil {
+		if modelUploadOp.Done() {
+			fmt.Printf("Model upload operation completed with failure: %v\n", err)
+		}
+		var ae *apierror.APIError
+		if errors.As(err, &ae) {
+			fmt.Printf("Model upload returned APIError details: %v\n", err)
+			fmt.Printf("APIError reason: %v\n", ae.Reason())
+			fmt.Printf("APIError details : %v\n", ae.Details())
+			fmt.Printf("APIError help: %v\n", ae.Details().Help)
+			// If a gRPC transport was used you can extract the
+			// google.golang.org/grpc/status.Status from the error
+			fmt.Printf("APIError GRPCStatus: %v\n", ae.GRPCStatus())
+			fmt.Printf("APIError HTTPCode: %v\n", ae.HTTPCode())
+		}
 		return infer.CreateResponse[VertexModelDeploymentState]{},
-			fmt.Errorf("failed to wait for model upload: %w", err)
+			fmt.Errorf("failed to wait for model upload again and again and again!!: %w", err)
 	}
 
 	// Build the deployment request

@@ -38,13 +38,9 @@ gen-sdk: build
 	@echo "SDKs generated successfully"
 	cd sdk/go && go mod init github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment/sdk/go && go mod tidy
 
-plugin-local: gen-sdk
+plugin-local: gen-sdk plugin
 	@echo "Installing provider..."
-	@cp ./build/pulumi-resource-$(PROVIDER_NAME) $(shell go env GOPATH)/bin/
-	@echo "Provider installed successfully"
-	@mkdir -p ~/.pulumi/plugins/resource-gcp-vertex-model-deployment-v$(PROVIDER_VERSION)/
-	@cp ./build/pulumi-resource-$(PROVIDER_NAME) ~/.pulumi/plugins/resource-gcp-vertex-model-deployment-v$(PROVIDER_VERSION)/
-	@cp ./PulumiPlugin.yaml ~/.pulumi/plugins/resource-gcp-vertex-model-deployment-v$(PROVIDER_VERSION)/
+	pulumi plugin install resource gcp-vertex-model-deployment v$(PROVIDER_VERSION) --file ./build/$(PLUGIN_NAME)
 	@echo "Plugin installed successfully"
 
 plugin: build

@@ -3,17 +3,15 @@ package resources
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"time"
 
 	aiplatform "cloud.google.com/go/aiplatform/apiv1"
 	"cloud.google.com/go/aiplatform/apiv1/aiplatformpb"
-	gax "github.com/googleapis/gax-go/v2"
-	"github.com/googleapis/gax-go/v2/apierror"
 	"github.com/pulumi/pulumi-go-provider/infer"
-	"google.golang.org/api/option"
+
+	"github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment/pkg/services"
 )
 
 // VertexModelDeployment represents a Pulumi resource for deploying models to Vertex AI endpoints.
@@ -90,142 +88,58 @@ func (VertexModelDeployment) Create(
 		}, nil
 	}
 
-	// Regional models and endpoints require regional endpoints
-	apiEndpoint := fmt.Sprintf("%s-aiplatform.googleapis.com:443", req.Inputs.Region)
-	clientEndpointOpt := option.WithEndpoint(apiEndpoint)
-
-	// Vertex endpoint client with Application Default Credentials
-	client, err := aiplatform.NewEndpointClient(ctx, clientEndpointOpt)
+	// Create the model upload service
+	uploader, err := services.NewVertexModelUpload(ctx, req.Inputs.ProjectID, req.Inputs.Region, req.Inputs.Labels)
 	if err != nil {
 		return infer.CreateResponse[VertexModelDeploymentState]{},
-			fmt.Errorf("failed to create endpoint client: %w", err)
+			fmt.Errorf("failed to initialize model upload service: %w", err)
 	}
 	defer func() {
-		if closeErr := client.Close(); closeErr != nil {
-			log.Printf("failed to close endpoint client: %v", closeErr)
+		if closeErr := uploader.Close(); closeErr != nil {
+			log.Printf("failed to close model upload service: %v", closeErr)
 		}
 	}()
 
-	// Vertex model client with Application Default Credentials
-	modelClient, err := aiplatform.NewModelClient(ctx, clientEndpointOpt)
+	// Upload the model
+	modelName, err := uploader.Upload(
+		ctx,
+		req.Name,
+		req.Inputs.ModelImageURL,
+		req.Inputs.ModelArtifactsBucketURI,
+		req.Inputs.ServiceAccount,
+	)
 	if err != nil {
-		return infer.CreateResponse[VertexModelDeploymentState]{},
-			fmt.Errorf("failed to create model client: %w", err)
-	}
-	defer func() {
-		if closeErr := modelClient.Close(); closeErr != nil {
-			log.Printf("failed to close endpoint client: %v", closeErr)
-		}
-	}()
-
-	modelUploadOp, err := modelClient.UploadModel(ctx, &aiplatformpb.UploadModelRequest{
-		// TODO support non traditional / global models
-		// Endpoint to which the model is attached. It can be regional or global, depending on the model type.
-		Parent:         fmt.Sprintf("projects/%s/locations/%s", req.Inputs.ProjectID, req.Inputs.Region),
-		ServiceAccount: req.Inputs.ServiceAccount,
-		Model: &aiplatformpb.Model{
-			DisplayName: req.Name,
-			Description: "Uploaded model for " + req.Inputs.ModelImageURL,
-			ContainerSpec: &aiplatformpb.ModelContainerSpec{
-				ImageUri: req.Inputs.ModelImageURL,
-				// TODO make me configurable
-				Args: []string{
-					"--allow_precompilation=false",
-					"--disable_optimizer=true",
-					"--saved_model_tags='serve,tpu'",
-					"--use_tfrt=true",
-				},
-			},
-			Labels: req.Inputs.Labels,
-			// May be optional for custom models but required for TensorFlow pre-built images.
-			// See:
-			// - https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts#framework-requirements
-			ArtifactUri: req.Inputs.ModelArtifactsBucketURI,
-		},
-	}, gax.WithTimeout(5*time.Minute))
-	if err != nil {
-		var apiError *apierror.APIError
-		if errors.As(err, &apiError) {
-			// TODO DRY up
-			log.Printf("Model upload returned APIError details: %v\n", err)
-			log.Printf("APIError reason: %v\n", apiError.Reason())
-			log.Printf("APIError details : %v\n", apiError.Details())
-			// If a gRPC transport was used you can extract the
-			// google.golang.org/grpc/status.Status from the error
-			log.Printf("APIError GRPCStatus: %+v\n", apiError.GRPCStatus())
-			log.Printf("APIError HTTPCode: %+v\n", apiError.HTTPCode())
-		}
-
 		return infer.CreateResponse[VertexModelDeploymentState]{},
 			fmt.Errorf("failed to upload model: %w", err)
 	}
 
-	modelUploadResult, err := modelUploadOp.Wait(context.Background(), gax.WithTimeout(10*time.Minute))
+	// Create the model deployment service
+	deployer, err := services.NewVertexModelDeploy(ctx, req.Inputs.ProjectID, req.Inputs.Region)
 	if err != nil {
-		if modelUploadOp.Done() {
-			log.Printf("Model upload operation completed with failure: %v\n", err)
-		}
-		var apiError *apierror.APIError
-		if errors.As(err, &apiError) {
-			// TODO DRY up
-			log.Printf("Model upload returned APIError details: %v\n", err)
-			log.Printf("APIError reason: %v\n", apiError.Reason())
-			log.Printf("APIError details : %v\n", apiError.Details())
-			log.Printf("APIError help: %v\n", apiError.Details().Help)
-			// If a gRPC transport was used you can extract the
-			// google.golang.org/grpc/status.Status from the error
-			log.Printf("APIError GRPCStatus: %v\n", apiError.GRPCStatus())
-			log.Printf("APIError HTTPCode: %v\n", apiError.HTTPCode())
-		}
-
 		return infer.CreateResponse[VertexModelDeploymentState]{},
-			fmt.Errorf("failed to wait for model upload: %w", err)
+			fmt.Errorf("failed to initialize model deployment service: %w", err)
 	}
+	defer func() {
+		if closeErr := deployer.Close(); closeErr != nil {
+			log.Printf("failed to close model deployment service: %v", closeErr)
+		}
+	}()
 
-	// Build the deployment request
-	deployedModel := &aiplatformpb.DeployedModel{
-		// Expected format: "projects/%s/locations/%s/models/%s"
-		Model:       modelUploadResult.GetModel(),
-		DisplayName: req.Name,
-		PredictionResources: &aiplatformpb.DeployedModel_DedicatedResources{
-			DedicatedResources: &aiplatformpb.DedicatedResources{
-				MachineSpec: &aiplatformpb.MachineSpec{
-					MachineType: req.Inputs.MachineType,
-				},
-				MinReplicaCount: safeIntToInt32(req.Inputs.MinReplicas),
-				MaxReplicaCount: safeIntToInt32(req.Inputs.MaxReplicas),
-			},
-		},
-	}
-
-	if req.Inputs.ServiceAccount != "" {
-		deployedModel.ServiceAccount = req.Inputs.ServiceAccount
-	}
-
-	deployReq := &aiplatformpb.DeployModelRequest{
-		Endpoint: fmt.Sprintf("projects/%s/locations/%s/endpoints/%s",
-			req.Inputs.ProjectID, req.Inputs.Region, req.Inputs.EndpointID),
-		DeployedModel: deployedModel,
-		TrafficSplit:  map[string]int32{
-			// TODO set for parallel model deployments
-		},
-	}
-
-	// Execute the deployment
-	deployOperation, err := client.DeployModel(ctx, deployReq)
+	// Deploy the model
+	deployedModelID, err := deployer.Deploy(
+		ctx,
+		req.Inputs.EndpointID,
+		modelName,
+		req.Name,
+		req.Inputs.MachineType,
+		req.Inputs.ServiceAccount,
+		safeIntToInt32(req.Inputs.MinReplicas),
+		safeIntToInt32(req.Inputs.MaxReplicas),
+	)
 	if err != nil {
 		return infer.CreateResponse[VertexModelDeploymentState]{},
 			fmt.Errorf("failed to deploy model: %w", err)
 	}
-
-	// Wait for completion with timeout
-	result, err := deployOperation.Wait(ctx)
-	if err != nil {
-		return infer.CreateResponse[VertexModelDeploymentState]{},
-			fmt.Errorf("failed to wait for deployment: %w", err)
-	}
-
-	deployedModelID := result.GetDeployedModel().GetId()
 
 	state.DeployedModelID = deployedModelID
 	state.EndpointName = req.Inputs.EndpointID

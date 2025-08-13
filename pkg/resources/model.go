@@ -1,9 +1,11 @@
+// Package resources provides Pulumi resource implementations for GCP Vertex AI model upload and deployment.
 package resources
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	aiplatform "cloud.google.com/go/aiplatform/apiv1"
@@ -14,12 +16,15 @@ import (
 	"google.golang.org/api/option"
 )
 
+// VertexModelDeployment represents a Pulumi resource for deploying models to Vertex AI endpoints.
 type VertexModelDeployment struct{}
 
-func (VertexModelDeployment) Annotate(a infer.Annotator) {
-	a.Describe(&VertexModelDeployment{}, "Deploys a model to a Vertex AI endpoint")
+// Annotate provides metadata and descriptions for the VertexModelDeployment resource.
+func (VertexModelDeployment) Annotate(annotator infer.Annotator) {
+	annotator.Describe(&VertexModelDeployment{}, "Deploys a model to a Vertex AI endpoint")
 }
 
+// VertexModelDeploymentArgs defines the input arguments for creating a Vertex AI model deployment.
 type VertexModelDeploymentArgs struct {
 	ProjectID               string            `pulumi:"projectId"`
 	Region                  string            `pulumi:"region"`
@@ -34,25 +39,27 @@ type VertexModelDeploymentArgs struct {
 	Labels                  map[string]string `pulumi:"labels,optional"`
 }
 
-func (args *VertexModelDeploymentArgs) Annotate(a infer.Annotator) {
-	a.Describe(&args.ProjectID, "Google Cloud Project ID")
-	a.Describe(&args.Region, "Google Cloud region")
-	a.Describe(&args.EndpointID, "Vertex AI Endpoint ID")
-	a.Describe(&args.ModelImageURL, "Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers")
-	a.Describe(&args.ModelArtifactsBucketURI, "Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts")
-	a.Describe(&args.MachineType, "Machine type for deployment")
-	a.Describe(&args.MinReplicas, "Minimum number of replicas")
-	a.Describe(&args.MaxReplicas, "Maximum number of replicas")
-	a.Describe(&args.TrafficPercent, "Traffic percentage for this deployment")
-	a.Describe(&args.ServiceAccount, "Service account for the deployment")
+// Annotate provides metadata and default values for the VertexModelDeploymentArgs.
+func (args *VertexModelDeploymentArgs) Annotate(annotator infer.Annotator) {
+	annotator.Describe(&args.ProjectID, "Google Cloud Project ID")
+	annotator.Describe(&args.Region, "Google Cloud region")
+	annotator.Describe(&args.EndpointID, "Vertex AI Endpoint ID")
+	annotator.Describe(&args.ModelImageURL, "Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers")
+	annotator.Describe(&args.ModelArtifactsBucketURI, "Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts")
+	annotator.Describe(&args.MachineType, "Machine type for deployment")
+	annotator.Describe(&args.MinReplicas, "Minimum number of replicas")
+	annotator.Describe(&args.MaxReplicas, "Maximum number of replicas")
+	annotator.Describe(&args.TrafficPercent, "Traffic percentage for this deployment")
+	annotator.Describe(&args.ServiceAccount, "Service account for the deployment")
 
 	// Set defaults
-	a.SetDefault(&args.MachineType, "n1-standard-2")
-	a.SetDefault(&args.MinReplicas, 1)
-	a.SetDefault(&args.MaxReplicas, 3)
-	a.SetDefault(&args.TrafficPercent, 100)
+	annotator.SetDefault(&args.MachineType, "n1-standard-2")
+	annotator.SetDefault(&args.MinReplicas, 1)
+	annotator.SetDefault(&args.MaxReplicas, 3)
+	annotator.SetDefault(&args.TrafficPercent, 100)
 }
 
+// VertexModelDeploymentState represents the state of a deployed Vertex AI model.
 type VertexModelDeploymentState struct {
 	VertexModelDeploymentArgs
 	DeployedModelID string `pulumi:"deployedModelId"`
@@ -60,10 +67,11 @@ type VertexModelDeploymentState struct {
 	CreateTime      string `pulumi:"createTime"`
 }
 
-func (state *VertexModelDeploymentState) Annotate(a infer.Annotator) {
-	a.Describe(&state.DeployedModelID, "ID of the deployed model")
-	a.Describe(&state.EndpointName, "Full name of the endpoint")
-	a.Describe(&state.CreateTime, "Creation timestamp")
+// Annotate provides metadata and descriptions for the VertexModelDeploymentState outputs.
+func (state *VertexModelDeploymentState) Annotate(annotator infer.Annotator) {
+	annotator.Describe(&state.DeployedModelID, "ID of the deployed model")
+	annotator.Describe(&state.EndpointName, "Full name of the endpoint")
+	annotator.Describe(&state.CreateTime, "Creation timestamp")
 }
 
 // Create implements the creation logic
@@ -92,7 +100,11 @@ func (VertexModelDeployment) Create(
 		return infer.CreateResponse[VertexModelDeploymentState]{},
 			fmt.Errorf("failed to create endpoint client: %w", err)
 	}
-	defer client.Close()
+	defer func() {
+		if closeErr := client.Close(); closeErr != nil {
+			log.Printf("failed to close endpoint client: %v", closeErr)
+		}
+	}()
 
 	// Vertex model client with Application Default Credentials
 	modelClient, err := aiplatform.NewModelClient(ctx, clientEndpointOpt)
@@ -100,7 +112,11 @@ func (VertexModelDeployment) Create(
 		return infer.CreateResponse[VertexModelDeploymentState]{},
 			fmt.Errorf("failed to create model client: %w", err)
 	}
-	defer modelClient.Close()
+	defer func() {
+		if closeErr := modelClient.Close(); closeErr != nil {
+			log.Printf("failed to close endpoint client: %v", closeErr)
+		}
+	}()
 
 	modelUploadOp, err := modelClient.UploadModel(ctx, &aiplatformpb.UploadModelRequest{
 		// TODO support non traditional / global models
@@ -128,38 +144,42 @@ func (VertexModelDeployment) Create(
 		},
 	}, gax.WithTimeout(5*time.Minute))
 	if err != nil {
-		var ae *apierror.APIError
-		if errors.As(err, &ae) {
-			fmt.Printf("Model upload returned APIError details: %v\n", err)
-			fmt.Printf("APIError reason: %v\n", ae.Reason())
-			fmt.Printf("APIError details : %v\n", ae.Details())
+		var apiError *apierror.APIError
+		if errors.As(err, &apiError) {
+			// TODO DRY up
+			log.Printf("Model upload returned APIError details: %v\n", err)
+			log.Printf("APIError reason: %v\n", apiError.Reason())
+			log.Printf("APIError details : %v\n", apiError.Details())
 			// If a gRPC transport was used you can extract the
 			// google.golang.org/grpc/status.Status from the error
-			fmt.Printf("APIError GRPCStatus: %+v\n", ae.GRPCStatus())
-			fmt.Printf("APIError HTTPCode: %+v\n", ae.HTTPCode())
+			log.Printf("APIError GRPCStatus: %+v\n", apiError.GRPCStatus())
+			log.Printf("APIError HTTPCode: %+v\n", apiError.HTTPCode())
 		}
+
 		return infer.CreateResponse[VertexModelDeploymentState]{},
-			fmt.Errorf("failed to upload model again and again!!!!!!: %w", err)
+			fmt.Errorf("failed to upload model: %w", err)
 	}
 
 	modelUploadResult, err := modelUploadOp.Wait(context.Background(), gax.WithTimeout(10*time.Minute))
 	if err != nil {
 		if modelUploadOp.Done() {
-			fmt.Printf("Model upload operation completed with failure: %v\n", err)
+			log.Printf("Model upload operation completed with failure: %v\n", err)
 		}
-		var ae *apierror.APIError
-		if errors.As(err, &ae) {
-			fmt.Printf("Model upload returned APIError details: %v\n", err)
-			fmt.Printf("APIError reason: %v\n", ae.Reason())
-			fmt.Printf("APIError details : %v\n", ae.Details())
-			fmt.Printf("APIError help: %v\n", ae.Details().Help)
+		var apiError *apierror.APIError
+		if errors.As(err, &apiError) {
+			// TODO DRY up
+			log.Printf("Model upload returned APIError details: %v\n", err)
+			log.Printf("APIError reason: %v\n", apiError.Reason())
+			log.Printf("APIError details : %v\n", apiError.Details())
+			log.Printf("APIError help: %v\n", apiError.Details().Help)
 			// If a gRPC transport was used you can extract the
 			// google.golang.org/grpc/status.Status from the error
-			fmt.Printf("APIError GRPCStatus: %v\n", ae.GRPCStatus())
-			fmt.Printf("APIError HTTPCode: %v\n", ae.HTTPCode())
+			log.Printf("APIError GRPCStatus: %v\n", apiError.GRPCStatus())
+			log.Printf("APIError HTTPCode: %v\n", apiError.HTTPCode())
 		}
+
 		return infer.CreateResponse[VertexModelDeploymentState]{},
-			fmt.Errorf("failed to wait for model upload again and again and again!!: %w", err)
+			fmt.Errorf("failed to wait for model upload: %w", err)
 	}
 
 	// Build the deployment request
@@ -172,8 +192,8 @@ func (VertexModelDeployment) Create(
 				MachineSpec: &aiplatformpb.MachineSpec{
 					MachineType: req.Inputs.MachineType,
 				},
-				MinReplicaCount: int32(req.Inputs.MinReplicas),
-				MaxReplicaCount: int32(req.Inputs.MaxReplicas),
+				MinReplicaCount: safeIntToInt32(req.Inputs.MinReplicas),
+				MaxReplicaCount: safeIntToInt32(req.Inputs.MaxReplicas),
 			},
 		},
 	}
@@ -192,14 +212,14 @@ func (VertexModelDeployment) Create(
 	}
 
 	// Execute the deployment
-	op, err := client.DeployModel(ctx, deployReq)
+	deployOperation, err := client.DeployModel(ctx, deployReq)
 	if err != nil {
 		return infer.CreateResponse[VertexModelDeploymentState]{},
 			fmt.Errorf("failed to deploy model: %w", err)
 	}
 
 	// Wait for completion with timeout
-	result, err := op.Wait(ctx)
+	result, err := deployOperation.Wait(ctx)
 	if err != nil {
 		return infer.CreateResponse[VertexModelDeploymentState]{},
 			fmt.Errorf("failed to wait for deployment: %w", err)
@@ -223,12 +243,17 @@ func (VertexModelDeployment) Delete(
 	req infer.DeleteRequest[VertexModelDeploymentState],
 ) (infer.DeleteResponse, error) {
 
+	// TODO set location
 	// With Application Default Credentials
 	client, err := aiplatform.NewEndpointClient(ctx)
 	if err != nil {
 		return infer.DeleteResponse{}, fmt.Errorf("failed to create endpoint client: %w", err)
 	}
-	defer client.Close()
+	defer func() {
+		if closeErr := client.Close(); closeErr != nil {
+			log.Printf("failed to close endpoint client: %v", closeErr)
+		}
+	}()
 
 	undeployReq := &aiplatformpb.UndeployModelRequest{
 		Endpoint: fmt.Sprintf("projects/%s/locations/%s/endpoints/%s",
@@ -236,12 +261,12 @@ func (VertexModelDeployment) Delete(
 		DeployedModelId: req.State.DeployedModelID,
 	}
 
-	op, err := client.UndeployModel(ctx, undeployReq)
+	undeployOperation, err := client.UndeployModel(ctx, undeployReq)
 	if err != nil {
 		return infer.DeleteResponse{}, fmt.Errorf("failed to undeploy model: %w", err)
 	}
 
-	_, err = op.Wait(ctx)
+	_, err = undeployOperation.Wait(ctx)
 	if err != nil {
 		return infer.DeleteResponse{}, fmt.Errorf("failed to wait for undeployment: %w", err)
 	}
@@ -251,7 +276,7 @@ func (VertexModelDeployment) Delete(
 
 // Update implements the update logic
 func (VertexModelDeployment) Update(
-	ctx context.Context,
+	_ context.Context,
 	req infer.UpdateRequest[VertexModelDeploymentArgs, VertexModelDeploymentState],
 ) (infer.UpdateResponse[VertexModelDeploymentState], error) {
 
@@ -272,12 +297,17 @@ func (VertexModelDeployment) Read(
 	req infer.ReadRequest[VertexModelDeploymentArgs, VertexModelDeploymentState],
 ) (infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState], error) {
 
+	// TODO set location
 	// With Application Default Credentials
 	client, err := aiplatform.NewEndpointClient(ctx)
 	if err != nil {
 		return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{}, err
 	}
-	defer client.Close()
+	defer func() {
+		if closeErr := client.Close(); closeErr != nil {
+			log.Printf("failed to close endpoint client: %v", closeErr)
+		}
+	}()
 
 	getReq := &aiplatformpb.GetEndpointRequest{
 		Name: fmt.Sprintf("projects/%s/locations/%s/endpoints/%s",
@@ -291,9 +321,10 @@ func (VertexModelDeployment) Read(
 
 	// Verify the deployed model still exists
 	var found bool
-	for _, dm := range endpoint.DeployedModels {
-		if dm.Id == req.ID {
+	for _, deployedModel := range endpoint.DeployedModels {
+		if deployedModel.Id == req.ID {
 			found = true
+
 			break
 		}
 	}
@@ -303,9 +334,5 @@ func (VertexModelDeployment) Read(
 		return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{}, nil
 	}
 
-	return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{
-		ID:     req.ID,
-		Inputs: req.Inputs,
-		State:  req.State,
-	}, nil
+	return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState](req), nil
 }

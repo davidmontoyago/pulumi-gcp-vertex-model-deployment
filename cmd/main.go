@@ -1,3 +1,4 @@
+// Package main provides the entry point for the pulumi-gcp-vertex-model-deployment provider.
 package main
 
 import (

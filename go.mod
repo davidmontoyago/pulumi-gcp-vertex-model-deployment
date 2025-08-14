@@ -1,12 +1,9 @@
-module github/davidmontoyago/pulumi-gcp-vertex-model-deployment
+module github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment
 
 go 1.24.5
 
-replace github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment => ./
-
 require (
 	cloud.google.com/go/aiplatform v1.97.0
-	github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment v0.0.0-00010101000000-000000000000
 	github.com/googleapis/gax-go/v2 v2.15.0
 	github.com/pulumi/pulumi-go-provider v1.1.0
 	google.golang.org/api v0.244.0

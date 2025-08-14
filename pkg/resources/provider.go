@@ -7,7 +7,6 @@ import (
 	"log"
 	"time"
 
-	aiplatform "cloud.google.com/go/aiplatform/apiv1"
 	"cloud.google.com/go/aiplatform/apiv1/aiplatformpb"
 	"github.com/pulumi/pulumi-go-provider/infer"
 
@@ -16,6 +15,12 @@ import (
 
 // VertexModelDeployment represents a Pulumi resource for deploying models to Vertex AI endpoints.
 type VertexModelDeployment struct{}
+
+// testFactoryRegistry holds test factories for dependency injection during testing
+var testFactoryRegistry struct {
+	modelClientFactory    services.ModelClientFactory
+	endpointClientFactory services.EndpointClientFactory
+}
 
 // Annotate provides metadata and descriptions for the VertexModelDeployment resource.
 func (VertexModelDeployment) Annotate(annotator infer.Annotator) {
@@ -49,6 +54,7 @@ func (args *VertexModelDeploymentArgs) Annotate(annotator infer.Annotator) {
 	annotator.Describe(&args.MaxReplicas, "Maximum number of replicas")
 	annotator.Describe(&args.TrafficPercent, "Traffic percentage for this deployment")
 	annotator.Describe(&args.ServiceAccount, "Service account for the deployment")
+	annotator.Describe(&args.Labels, "Labels for the deployment")
 
 	// Set defaults
 	annotator.SetDefault(&args.MachineType, "n1-standard-2")
@@ -73,7 +79,7 @@ func (state *VertexModelDeploymentState) Annotate(annotator infer.Annotator) {
 }
 
 // Create implements the creation logic
-func (VertexModelDeployment) Create(
+func (v VertexModelDeployment) Create(
 	ctx context.Context,
 	req infer.CreateRequest[VertexModelDeploymentArgs],
 ) (infer.CreateResponse[VertexModelDeploymentState], error) {
@@ -88,12 +94,34 @@ func (VertexModelDeployment) Create(
 		}, nil
 	}
 
-	// Create the model upload service
-	uploader, err := services.NewVertexModelUpload(ctx, req.Inputs.ProjectID, req.Inputs.Region, req.Inputs.Labels)
+	// Create clients using the factories
+	modelClientFactory := v.getModelClientFactory()
+	endpointClientFactory := v.getEndpointClientFactory()
+
+	modelClient, err := modelClientFactory(ctx, req.Inputs.Region)
 	if err != nil {
 		return infer.CreateResponse[VertexModelDeploymentState]{},
-			fmt.Errorf("failed to initialize model upload service: %w", err)
+			fmt.Errorf("failed to create model client: %w", err)
 	}
+	defer func() {
+		if closeErr := modelClient.Close(); closeErr != nil {
+			log.Printf("failed to close model client: %v", closeErr)
+		}
+	}()
+
+	endpointClient, err := endpointClientFactory(ctx, req.Inputs.Region)
+	if err != nil {
+		return infer.CreateResponse[VertexModelDeploymentState]{},
+			fmt.Errorf("failed to create endpoint client: %w", err)
+	}
+	defer func() {
+		if closeErr := endpointClient.Close(); closeErr != nil {
+			log.Printf("failed to close endpoint client: %v", closeErr)
+		}
+	}()
+
+	// Create the model upload service
+	uploader := services.NewVertexModelUpload(ctx, modelClient, req.Inputs.ProjectID, req.Inputs.Region, req.Inputs.Labels)
 	defer func() {
 		if closeErr := uploader.Close(); closeErr != nil {
 			log.Printf("failed to close model upload service: %v", closeErr)
@@ -114,11 +142,7 @@ func (VertexModelDeployment) Create(
 	}
 
 	// Create the model deployment service
-	deployer, err := services.NewVertexModelDeploy(ctx, req.Inputs.ProjectID, req.Inputs.Region)
-	if err != nil {
-		return infer.CreateResponse[VertexModelDeploymentState]{},
-			fmt.Errorf("failed to initialize model deployment service: %w", err)
-	}
+	deployer := services.NewVertexModelDeploy(ctx, endpointClient, req.Inputs.ProjectID, req.Inputs.Region)
 	defer func() {
 		if closeErr := deployer.Close(); closeErr != nil {
 			log.Printf("failed to close model deployment service: %v", closeErr)
@@ -152,19 +176,19 @@ func (VertexModelDeployment) Create(
 }
 
 // Delete implements the deletion logic
-func (VertexModelDeployment) Delete(
+func (v VertexModelDeployment) Delete(
 	ctx context.Context,
 	req infer.DeleteRequest[VertexModelDeploymentState],
 ) (infer.DeleteResponse, error) {
 
-	// TODO set location
-	// With Application Default Credentials
-	client, err := aiplatform.NewEndpointClient(ctx)
+	// Create endpoint client using the factory
+	endpointClientFactory := v.getEndpointClientFactory()
+	endpointClient, err := endpointClientFactory(ctx, req.State.Region)
 	if err != nil {
 		return infer.DeleteResponse{}, fmt.Errorf("failed to create endpoint client: %w", err)
 	}
 	defer func() {
-		if closeErr := client.Close(); closeErr != nil {
+		if closeErr := endpointClient.Close(); closeErr != nil {
 			log.Printf("failed to close endpoint client: %v", closeErr)
 		}
 	}()
@@ -175,7 +199,7 @@ func (VertexModelDeployment) Delete(
 		DeployedModelId: req.State.DeployedModelID,
 	}
 
-	undeployOperation, err := client.UndeployModel(ctx, undeployReq)
+	undeployOperation, err := endpointClient.UndeployModel(ctx, undeployReq)
 	if err != nil {
 		return infer.DeleteResponse{}, fmt.Errorf("failed to undeploy model: %w", err)
 	}
@@ -206,19 +230,19 @@ func (VertexModelDeployment) Update(
 }
 
 // Read implements the read logic for drift detection
-func (VertexModelDeployment) Read(
+func (v VertexModelDeployment) Read(
 	ctx context.Context,
 	req infer.ReadRequest[VertexModelDeploymentArgs, VertexModelDeploymentState],
 ) (infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState], error) {
 
-	// TODO set location
-	// With Application Default Credentials
-	client, err := aiplatform.NewEndpointClient(ctx)
+	// Create endpoint client using the factory
+	endpointClientFactory := v.getEndpointClientFactory()
+	endpointClient, err := endpointClientFactory(ctx, req.State.Region)
 	if err != nil {
 		return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{}, err
 	}
 	defer func() {
-		if closeErr := client.Close(); closeErr != nil {
+		if closeErr := endpointClient.Close(); closeErr != nil {
 			log.Printf("failed to close endpoint client: %v", closeErr)
 		}
 	}()
@@ -228,7 +252,7 @@ func (VertexModelDeployment) Read(
 			req.State.ProjectID, req.State.Region, req.State.EndpointID),
 	}
 
-	endpoint, err := client.GetEndpoint(ctx, getReq)
+	endpoint, err := endpointClient.GetEndpoint(ctx, getReq)
 	if err != nil {
 		return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{}, err
 	}
@@ -249,4 +273,22 @@ func (VertexModelDeployment) Read(
 	}
 
 	return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState](req), nil
+}
+
+// getModelClientFactory returns the model client factory, defaulting to production factory if nil.
+func (v VertexModelDeployment) getModelClientFactory() services.ModelClientFactory {
+	if testFactoryRegistry.modelClientFactory == nil {
+		return services.DefaultModelClientFactory
+	}
+
+	return testFactoryRegistry.modelClientFactory
+}
+
+// getEndpointClientFactory returns the endpoint client factory, defaulting to production factory if nil.
+func (v VertexModelDeployment) getEndpointClientFactory() services.EndpointClientFactory {
+	if testFactoryRegistry.endpointClientFactory == nil {
+		return services.DefaultEndpointClientFactory
+	}
+
+	return testFactoryRegistry.endpointClientFactory
 }

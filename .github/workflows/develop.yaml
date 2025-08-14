@@ -85,7 +85,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: pulumi-gcp-vertex-model-deployment-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: build/pulumi-resource-vertex-model-deployment-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: build/pulumi-resource-vertex-model-deployment-*
 
   lint:
     runs-on: ubuntu-latest

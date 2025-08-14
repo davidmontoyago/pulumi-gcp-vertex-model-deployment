@@ -45,6 +45,8 @@ jobs:
             goarch: amd64
           - goos: linux
             goarch: arm64
+          - goos: darwin
+            goarch: arm64
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -85,7 +87,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: pulumi-gcp-vertex-model-deployment-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: build/pulumi-resource-vertex-model-deployment-*
+          path: build/pulumi-resource-vertex-model-deployment-*.tar.gz
 
   lint:
     runs-on: ubuntu-latest

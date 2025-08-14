@@ -1,9 +1,9 @@
 GOOS							?= $${GOOS:-linux}
 GOARCH						?= $${GOARCH:-amd64}
 PROVIDER_VERSION	?= $${PROVIDER_VERSION:-0.0.1}
-PROVIDER_NAME			:= vertex-model-deployment
+PROVIDER_NAME			:= gcp-vertex-model-deployment
 PROVIDER_PATH			:= github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment
-PLUGIN_NAME				:= pulumi-resource-$(PROVIDER_NAME)-$(GOOS)-$(GOARCH)
+PLUGIN_NAME				:= pulumi-resource-$(PROVIDER_NAME)-v$(PROVIDER_VERSION)-$(GOOS)-$(GOARCH)
 
 .PHONY: build clean test lint
 
@@ -51,3 +51,6 @@ plugin: build
 			-ldflags "-s -w -X $(PROVIDER_PATH)/pkg/version.Version=v$(PROVIDER_VERSION)" \
 			-o ./build/$(PLUGIN_NAME) ./cmd
 	@echo "Plugin built successfully"
+	@echo "Compressing..."
+	tar -czvf ./build/$(PLUGIN_NAME).tar.gz ./build/$(PLUGIN_NAME)
+	@echo "Compressed successfully"

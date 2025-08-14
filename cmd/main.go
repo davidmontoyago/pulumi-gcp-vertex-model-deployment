@@ -23,6 +23,7 @@ func main() {
 		WithKeywords("pulumi", "gcp", "vertex", "model").
 		WithDescription("Deploy AI models to Vertex endpoints").
 		WithRepository("github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment").
+		WithPluginDownloadURL("github://api.github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment").
 		Build()
 
 	if err != nil {

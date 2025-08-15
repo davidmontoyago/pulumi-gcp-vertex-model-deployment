@@ -36,4 +36,3 @@ Pulumi.*.yaml
 
 coverage*
 build
-sdk

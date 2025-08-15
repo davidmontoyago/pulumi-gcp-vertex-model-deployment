@@ -1,0 +1,6 @@
+{
+  "resource": true,
+  "name": "gcp-vertex-model-deployment",
+  "version": "0.0.0",
+  "server": "github://api.github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment"
+}

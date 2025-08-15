@@ -1,0 +1,28 @@
+{
+    "name": "@davidmontoyago/gcp-vertex-model-deployment",
+    "version": "0.0.0",
+    "keywords": [
+        "pulumi",
+        "gcp",
+        "vertex",
+        "model"
+    ],
+    "repository": "github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment",
+    "license": "Apache-2.0",
+    "scripts": {
+        "build": "tsc"
+    },
+    "dependencies": {
+        "@pulumi/pulumi": "^3.142.0"
+    },
+    "devDependencies": {
+        "@types/node": "^18",
+        "typescript": "^4.3.5"
+    },
+    "pulumi": {
+        "resource": true,
+        "name": "gcp-vertex-model-deployment",
+        "version": "0.0.0",
+        "server": "github://api.github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment"
+    }
+}

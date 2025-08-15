@@ -7,7 +7,7 @@ Upload and deploy a model from a Docker image to a Vertex endpoint:
 modelArtifactsURI := pulumi.Sprintf("gs://%s/models/my-model", myArtifactsBucket.Name)
 modelImageURL := "us-docker.pkg.dev/vertex-ai/prediction/tf2-cpu.2-15:latest"
 
-_, err = vertexmodeldeployment.NewVertexModelDeployment(ctx, v.newResourceName("vertex-model-deployment", "", 64), &vertexmodeldeployment.VertexModelDeploymentArgs{
+_, err = vertexmodeldeployment.NewVertexModelDeployment(ctx, "vertex-model-deployment", &vertexmodeldeployment.VertexModelDeploymentArgs{
   ProjectId:               pulumi.String(v.Project),
   Region:                  pulumi.String(v.Region),
   EndpointId:              endpoint.Name,
@@ -32,6 +32,11 @@ See:
 ## Getting Started
 
 Install for local dev:
-```
+```sh
 PROVIDER_VERSION=0.0.0 GOOS=darwin GOARCH=arm64 make plugin-local
+```
+
+Get the SDK:
+```sh
+go get github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment/sdk/go
 ```

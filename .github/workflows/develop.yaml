@@ -83,12 +83,6 @@ jobs:
       - name: Build Pulumi plugin
         run: PROVIDER_VERSION=${{ steps.version.outputs.PROVIDER_VERSION }} make plugin
 
-      - name: Publish Go SDK
-        uses: publish-go-sdk-action@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          path: sdk/go
-
       - name: Publish Pulumi plugin
         uses: actions/upload-artifact@v4
         with:

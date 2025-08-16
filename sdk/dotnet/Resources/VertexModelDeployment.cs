@@ -77,6 +77,24 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources
         public Output<string> ModelImageUrl { get; private set; } = null!;
 
         /// <summary>
+        /// Bucket URI to the schema for the model inference behavior
+        /// </summary>
+        [Output("modelPredictionBehaviorSchemaUri")]
+        public Output<string?> ModelPredictionBehaviorSchemaUri { get; private set; } = null!;
+
+        /// <summary>
+        /// Bucket URI to the schema for the model input
+        /// </summary>
+        [Output("modelPredictionInputSchemaUri")]
+        public Output<string> ModelPredictionInputSchemaUri { get; private set; } = null!;
+
+        /// <summary>
+        /// Bucket URI to the schema for the model output
+        /// </summary>
+        [Output("modelPredictionOutputSchemaUri")]
+        public Output<string> ModelPredictionOutputSchemaUri { get; private set; } = null!;
+
+        /// <summary>
         /// Google Cloud Project ID
         /// </summary>
         [Output("projectId")]
@@ -193,6 +211,24 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources
         /// </summary>
         [Input("modelImageUrl", required: true)]
         public Input<string> ModelImageUrl { get; set; } = null!;
+
+        /// <summary>
+        /// Bucket URI to the schema for the model inference behavior
+        /// </summary>
+        [Input("modelPredictionBehaviorSchemaUri")]
+        public Input<string>? ModelPredictionBehaviorSchemaUri { get; set; }
+
+        /// <summary>
+        /// Bucket URI to the schema for the model input
+        /// </summary>
+        [Input("modelPredictionInputSchemaUri", required: true)]
+        public Input<string> ModelPredictionInputSchemaUri { get; set; } = null!;
+
+        /// <summary>
+        /// Bucket URI to the schema for the model output
+        /// </summary>
+        [Input("modelPredictionOutputSchemaUri", required: true)]
+        public Input<string> ModelPredictionOutputSchemaUri { get; set; } = null!;
 
         /// <summary>
         /// Google Cloud Project ID

@@ -13,9 +13,20 @@ import (
 	"github.com/googleapis/gax-go/v2/apierror"
 )
 
+// ModelUpload represents the parameters needed to upload a model to Vertex AI.
+type ModelUpload struct {
+	Name                             string
+	ModelImageURL                    string
+	ModelArtifactsBucketURI          string
+	ServiceAccountEmail              string
+	ModelPredictionInputSchemaURI    string
+	ModelPredictionOutputSchemaURI   string
+	ModelPredictionBehaviorSchemaURI string
+}
+
 // ModelUploader interface defines operations for uploading models.
 type ModelUploader interface {
-	Upload(ctx context.Context, name, modelImageURL, modelArtifactsBucketURI, serviceAccount string) (string, error)
+	Upload(ctx context.Context, uploadParams ModelUpload) (string, error)
 	Close() error
 }
 
@@ -51,17 +62,29 @@ func NewVertexModelUpload(_ context.Context, modelClient VertexModelClient, proj
 }
 
 // Upload uploads a model to Vertex AI and returns the model name.
-func (u *VertexModelUpload) Upload(ctx context.Context, name, modelImageURL, modelArtifactsBucketURI, serviceAccount string) (string, error) {
+func (u *VertexModelUpload) Upload(ctx context.Context, params ModelUpload) (string, error) {
+
+	predictionSchema := &aiplatformpb.PredictSchemata{
+		// Schema for the model input
+		InstanceSchemaUri: params.ModelPredictionInputSchemaURI,
+		// Schema for the model output
+		PredictionSchemaUri: params.ModelPredictionOutputSchemaURI,
+	}
+	if params.ModelPredictionBehaviorSchemaURI != "" {
+		// Schema for the model inference behavior. Optional depending on the model.
+		predictionSchema.ParametersSchemaUri = params.ModelPredictionBehaviorSchemaURI
+	}
+
 	modelUploadOp, err := u.modelClient.UploadModel(ctx, &aiplatformpb.UploadModelRequest{
 		// TODO support non traditional / global models
 		// Endpoint to which the model is attached. It can be regional or global, depending on the model type.
 		Parent:         fmt.Sprintf("projects/%s/locations/%s", u.projectID, u.region),
-		ServiceAccount: serviceAccount,
+		ServiceAccount: params.ServiceAccountEmail,
 		Model: &aiplatformpb.Model{
-			DisplayName: name,
-			Description: "Uploaded model for " + modelImageURL,
+			DisplayName: params.Name,
+			Description: "Uploaded model for " + params.ModelImageURL,
 			ContainerSpec: &aiplatformpb.ModelContainerSpec{
-				ImageUri: modelImageURL,
+				ImageUri: params.ModelImageURL,
 				// TODO make me configurable
 				Args: []string{
 					"--allow_precompilation=false",
@@ -74,7 +97,9 @@ func (u *VertexModelUpload) Upload(ctx context.Context, name, modelImageURL, mod
 			// May be optional for custom models but required for TensorFlow pre-built images.
 			// See:
 			// - https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts#framework-requirements
-			ArtifactUri: modelArtifactsBucketURI,
+			ArtifactUri: params.ModelArtifactsBucketURI,
+			// Paths to the model's prediction schemas
+			PredictSchemata: predictionSchema,
 		},
 	}, gax.WithTimeout(5*time.Minute))
 	if err != nil {

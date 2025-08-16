@@ -36,6 +36,12 @@ type VertexModelDeployment struct {
 	ModelArtifactsBucketUri pulumi.StringOutput `pulumi:"modelArtifactsBucketUri"`
 	// Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers
 	ModelImageUrl pulumi.StringOutput `pulumi:"modelImageUrl"`
+	// Bucket URI to the schema for the model inference behavior
+	ModelPredictionBehaviorSchemaUri pulumi.StringPtrOutput `pulumi:"modelPredictionBehaviorSchemaUri"`
+	// Bucket URI to the schema for the model input
+	ModelPredictionInputSchemaUri pulumi.StringOutput `pulumi:"modelPredictionInputSchemaUri"`
+	// Bucket URI to the schema for the model output
+	ModelPredictionOutputSchemaUri pulumi.StringOutput `pulumi:"modelPredictionOutputSchemaUri"`
 	// Google Cloud Project ID
 	ProjectId pulumi.StringOutput `pulumi:"projectId"`
 	// Google Cloud region
@@ -61,6 +67,12 @@ func NewVertexModelDeployment(ctx *pulumi.Context,
 	}
 	if args.ModelImageUrl == nil {
 		return nil, errors.New("invalid value for required argument 'ModelImageUrl'")
+	}
+	if args.ModelPredictionInputSchemaUri == nil {
+		return nil, errors.New("invalid value for required argument 'ModelPredictionInputSchemaUri'")
+	}
+	if args.ModelPredictionOutputSchemaUri == nil {
+		return nil, errors.New("invalid value for required argument 'ModelPredictionOutputSchemaUri'")
 	}
 	if args.ProjectId == nil {
 		return nil, errors.New("invalid value for required argument 'ProjectId'")
@@ -127,6 +139,12 @@ type vertexModelDeploymentArgs struct {
 	ModelArtifactsBucketUri string `pulumi:"modelArtifactsBucketUri"`
 	// Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers
 	ModelImageUrl string `pulumi:"modelImageUrl"`
+	// Bucket URI to the schema for the model inference behavior
+	ModelPredictionBehaviorSchemaUri *string `pulumi:"modelPredictionBehaviorSchemaUri"`
+	// Bucket URI to the schema for the model input
+	ModelPredictionInputSchemaUri string `pulumi:"modelPredictionInputSchemaUri"`
+	// Bucket URI to the schema for the model output
+	ModelPredictionOutputSchemaUri string `pulumi:"modelPredictionOutputSchemaUri"`
 	// Google Cloud Project ID
 	ProjectId string `pulumi:"projectId"`
 	// Google Cloud region
@@ -153,6 +171,12 @@ type VertexModelDeploymentArgs struct {
 	ModelArtifactsBucketUri pulumi.StringInput
 	// Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers
 	ModelImageUrl pulumi.StringInput
+	// Bucket URI to the schema for the model inference behavior
+	ModelPredictionBehaviorSchemaUri pulumi.StringPtrInput
+	// Bucket URI to the schema for the model input
+	ModelPredictionInputSchemaUri pulumi.StringInput
+	// Bucket URI to the schema for the model output
+	ModelPredictionOutputSchemaUri pulumi.StringInput
 	// Google Cloud Project ID
 	ProjectId pulumi.StringInput
 	// Google Cloud region
@@ -298,6 +322,21 @@ func (o VertexModelDeploymentOutput) ModelArtifactsBucketUri() pulumi.StringOutp
 // Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers
 func (o VertexModelDeploymentOutput) ModelImageUrl() pulumi.StringOutput {
 	return o.ApplyT(func(v *VertexModelDeployment) pulumi.StringOutput { return v.ModelImageUrl }).(pulumi.StringOutput)
+}
+
+// Bucket URI to the schema for the model inference behavior
+func (o VertexModelDeploymentOutput) ModelPredictionBehaviorSchemaUri() pulumi.StringPtrOutput {
+	return o.ApplyT(func(v *VertexModelDeployment) pulumi.StringPtrOutput { return v.ModelPredictionBehaviorSchemaUri }).(pulumi.StringPtrOutput)
+}
+
+// Bucket URI to the schema for the model input
+func (o VertexModelDeploymentOutput) ModelPredictionInputSchemaUri() pulumi.StringOutput {
+	return o.ApplyT(func(v *VertexModelDeployment) pulumi.StringOutput { return v.ModelPredictionInputSchemaUri }).(pulumi.StringOutput)
+}
+
+// Bucket URI to the schema for the model output
+func (o VertexModelDeploymentOutput) ModelPredictionOutputSchemaUri() pulumi.StringOutput {
+	return o.ApplyT(func(v *VertexModelDeployment) pulumi.StringOutput { return v.ModelPredictionOutputSchemaUri }).(pulumi.StringOutput)
 }
 
 // Google Cloud Project ID

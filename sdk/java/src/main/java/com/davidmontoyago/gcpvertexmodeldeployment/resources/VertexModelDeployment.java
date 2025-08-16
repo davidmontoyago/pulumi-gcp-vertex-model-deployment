@@ -162,6 +162,48 @@ public class VertexModelDeployment extends com.pulumi.resources.CustomResource {
         return this.modelImageUrl;
     }
     /**
+     * Bucket URI to the schema for the model inference behavior
+     * 
+     */
+    @Export(name="modelPredictionBehaviorSchemaUri", refs={String.class}, tree="[0]")
+    private Output</* @Nullable */ String> modelPredictionBehaviorSchemaUri;
+
+    /**
+     * @return Bucket URI to the schema for the model inference behavior
+     * 
+     */
+    public Output<Optional<String>> modelPredictionBehaviorSchemaUri() {
+        return Codegen.optional(this.modelPredictionBehaviorSchemaUri);
+    }
+    /**
+     * Bucket URI to the schema for the model input
+     * 
+     */
+    @Export(name="modelPredictionInputSchemaUri", refs={String.class}, tree="[0]")
+    private Output<String> modelPredictionInputSchemaUri;
+
+    /**
+     * @return Bucket URI to the schema for the model input
+     * 
+     */
+    public Output<String> modelPredictionInputSchemaUri() {
+        return this.modelPredictionInputSchemaUri;
+    }
+    /**
+     * Bucket URI to the schema for the model output
+     * 
+     */
+    @Export(name="modelPredictionOutputSchemaUri", refs={String.class}, tree="[0]")
+    private Output<String> modelPredictionOutputSchemaUri;
+
+    /**
+     * @return Bucket URI to the schema for the model output
+     * 
+     */
+    public Output<String> modelPredictionOutputSchemaUri() {
+        return this.modelPredictionOutputSchemaUri;
+    }
+    /**
      * Google Cloud Project ID
      * 
      */

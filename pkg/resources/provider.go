@@ -29,17 +29,20 @@ func (VertexModelDeployment) Annotate(annotator infer.Annotator) {
 
 // VertexModelDeploymentArgs defines the input arguments for creating a Vertex AI model deployment.
 type VertexModelDeploymentArgs struct {
-	ProjectID               string            `pulumi:"projectId"`
-	Region                  string            `pulumi:"region"`
-	EndpointID              string            `pulumi:"endpointId"`
-	ModelImageURL           string            `pulumi:"modelImageUrl"`
-	ModelArtifactsBucketURI string            `pulumi:"modelArtifactsBucketUri"`
-	MachineType             string            `pulumi:"machineType,optional"`
-	MinReplicas             int               `pulumi:"minReplicas,optional"`
-	MaxReplicas             int               `pulumi:"maxReplicas,optional"`
-	TrafficPercent          int               `pulumi:"trafficPercent,optional"`
-	ServiceAccount          string            `pulumi:"serviceAccount,optional"`
-	Labels                  map[string]string `pulumi:"labels,optional"`
+	ProjectID                        string            `pulumi:"projectId"`
+	Region                           string            `pulumi:"region"`
+	EndpointID                       string            `pulumi:"endpointId"`
+	ModelImageURL                    string            `pulumi:"modelImageUrl"`
+	ModelArtifactsBucketURI          string            `pulumi:"modelArtifactsBucketUri"`
+	ModelPredictionInputSchemaURI    string            `pulumi:"modelPredictionInputSchemaUri"`
+	ModelPredictionOutputSchemaURI   string            `pulumi:"modelPredictionOutputSchemaUri"`
+	ModelPredictionBehaviorSchemaURI string            `pulumi:"modelPredictionBehaviorSchemaUri,optional"`
+	MachineType                      string            `pulumi:"machineType,optional"`
+	MinReplicas                      int               `pulumi:"minReplicas,optional"`
+	MaxReplicas                      int               `pulumi:"maxReplicas,optional"`
+	TrafficPercent                   int               `pulumi:"trafficPercent,optional"`
+	ServiceAccount                   string            `pulumi:"serviceAccount,optional"`
+	Labels                           map[string]string `pulumi:"labels,optional"`
 }
 
 // Annotate provides metadata and default values for the VertexModelDeploymentArgs.
@@ -49,6 +52,9 @@ func (args *VertexModelDeploymentArgs) Annotate(annotator infer.Annotator) {
 	annotator.Describe(&args.EndpointID, "Vertex AI Endpoint ID")
 	annotator.Describe(&args.ModelImageURL, "Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers")
 	annotator.Describe(&args.ModelArtifactsBucketURI, "Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts")
+	annotator.Describe(&args.ModelPredictionInputSchemaURI, "Bucket URI to the schema for the model input")
+	annotator.Describe(&args.ModelPredictionOutputSchemaURI, "Bucket URI to the schema for the model output")
+	annotator.Describe(&args.ModelPredictionBehaviorSchemaURI, "Bucket URI to the schema for the model inference behavior")
 	annotator.Describe(&args.MachineType, "Machine type for deployment")
 	annotator.Describe(&args.MinReplicas, "Minimum number of replicas")
 	annotator.Describe(&args.MaxReplicas, "Maximum number of replicas")
@@ -129,13 +135,15 @@ func (v VertexModelDeployment) Create(
 	}()
 
 	// Upload the model
-	modelName, err := uploader.Upload(
-		ctx,
-		req.Name,
-		req.Inputs.ModelImageURL,
-		req.Inputs.ModelArtifactsBucketURI,
-		req.Inputs.ServiceAccount,
-	)
+	modelName, err := uploader.Upload(ctx, services.ModelUpload{
+		Name:                             req.Name,
+		ModelImageURL:                    req.Inputs.ModelImageURL,
+		ModelArtifactsBucketURI:          req.Inputs.ModelArtifactsBucketURI,
+		ServiceAccountEmail:              req.Inputs.ServiceAccount,
+		ModelPredictionInputSchemaURI:    req.Inputs.ModelPredictionInputSchemaURI,
+		ModelPredictionOutputSchemaURI:   req.Inputs.ModelPredictionOutputSchemaURI,
+		ModelPredictionBehaviorSchemaURI: req.Inputs.ModelPredictionBehaviorSchemaURI,
+	})
 	if err != nil {
 		return infer.CreateResponse[VertexModelDeploymentState]{},
 			fmt.Errorf("failed to upload model: %w", err)

@@ -125,6 +125,51 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
     }
 
     /**
+     * Bucket URI to the schema for the model inference behavior
+     * 
+     */
+    @Import(name="modelPredictionBehaviorSchemaUri")
+    private @Nullable Output<String> modelPredictionBehaviorSchemaUri;
+
+    /**
+     * @return Bucket URI to the schema for the model inference behavior
+     * 
+     */
+    public Optional<Output<String>> modelPredictionBehaviorSchemaUri() {
+        return Optional.ofNullable(this.modelPredictionBehaviorSchemaUri);
+    }
+
+    /**
+     * Bucket URI to the schema for the model input
+     * 
+     */
+    @Import(name="modelPredictionInputSchemaUri", required=true)
+    private Output<String> modelPredictionInputSchemaUri;
+
+    /**
+     * @return Bucket URI to the schema for the model input
+     * 
+     */
+    public Output<String> modelPredictionInputSchemaUri() {
+        return this.modelPredictionInputSchemaUri;
+    }
+
+    /**
+     * Bucket URI to the schema for the model output
+     * 
+     */
+    @Import(name="modelPredictionOutputSchemaUri", required=true)
+    private Output<String> modelPredictionOutputSchemaUri;
+
+    /**
+     * @return Bucket URI to the schema for the model output
+     * 
+     */
+    public Output<String> modelPredictionOutputSchemaUri() {
+        return this.modelPredictionOutputSchemaUri;
+    }
+
+    /**
      * Google Cloud Project ID
      * 
      */
@@ -194,6 +239,9 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
         this.minReplicas = $.minReplicas;
         this.modelArtifactsBucketUri = $.modelArtifactsBucketUri;
         this.modelImageUrl = $.modelImageUrl;
+        this.modelPredictionBehaviorSchemaUri = $.modelPredictionBehaviorSchemaUri;
+        this.modelPredictionInputSchemaUri = $.modelPredictionInputSchemaUri;
+        this.modelPredictionOutputSchemaUri = $.modelPredictionOutputSchemaUri;
         this.projectId = $.projectId;
         this.region = $.region;
         this.serviceAccount = $.serviceAccount;
@@ -366,6 +414,69 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
         }
 
         /**
+         * @param modelPredictionBehaviorSchemaUri Bucket URI to the schema for the model inference behavior
+         * 
+         * @return builder
+         * 
+         */
+        public Builder modelPredictionBehaviorSchemaUri(@Nullable Output<String> modelPredictionBehaviorSchemaUri) {
+            $.modelPredictionBehaviorSchemaUri = modelPredictionBehaviorSchemaUri;
+            return this;
+        }
+
+        /**
+         * @param modelPredictionBehaviorSchemaUri Bucket URI to the schema for the model inference behavior
+         * 
+         * @return builder
+         * 
+         */
+        public Builder modelPredictionBehaviorSchemaUri(String modelPredictionBehaviorSchemaUri) {
+            return modelPredictionBehaviorSchemaUri(Output.of(modelPredictionBehaviorSchemaUri));
+        }
+
+        /**
+         * @param modelPredictionInputSchemaUri Bucket URI to the schema for the model input
+         * 
+         * @return builder
+         * 
+         */
+        public Builder modelPredictionInputSchemaUri(Output<String> modelPredictionInputSchemaUri) {
+            $.modelPredictionInputSchemaUri = modelPredictionInputSchemaUri;
+            return this;
+        }
+
+        /**
+         * @param modelPredictionInputSchemaUri Bucket URI to the schema for the model input
+         * 
+         * @return builder
+         * 
+         */
+        public Builder modelPredictionInputSchemaUri(String modelPredictionInputSchemaUri) {
+            return modelPredictionInputSchemaUri(Output.of(modelPredictionInputSchemaUri));
+        }
+
+        /**
+         * @param modelPredictionOutputSchemaUri Bucket URI to the schema for the model output
+         * 
+         * @return builder
+         * 
+         */
+        public Builder modelPredictionOutputSchemaUri(Output<String> modelPredictionOutputSchemaUri) {
+            $.modelPredictionOutputSchemaUri = modelPredictionOutputSchemaUri;
+            return this;
+        }
+
+        /**
+         * @param modelPredictionOutputSchemaUri Bucket URI to the schema for the model output
+         * 
+         * @return builder
+         * 
+         */
+        public Builder modelPredictionOutputSchemaUri(String modelPredictionOutputSchemaUri) {
+            return modelPredictionOutputSchemaUri(Output.of(modelPredictionOutputSchemaUri));
+        }
+
+        /**
          * @param projectId Google Cloud Project ID
          * 
          * @return builder
@@ -461,6 +572,12 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
             }
             if ($.modelImageUrl == null) {
                 throw new MissingRequiredPropertyException("VertexModelDeploymentArgs", "modelImageUrl");
+            }
+            if ($.modelPredictionInputSchemaUri == null) {
+                throw new MissingRequiredPropertyException("VertexModelDeploymentArgs", "modelPredictionInputSchemaUri");
+            }
+            if ($.modelPredictionOutputSchemaUri == null) {
+                throw new MissingRequiredPropertyException("VertexModelDeploymentArgs", "modelPredictionOutputSchemaUri");
             }
             if ($.projectId == null) {
                 throw new MissingRequiredPropertyException("VertexModelDeploymentArgs", "projectId");

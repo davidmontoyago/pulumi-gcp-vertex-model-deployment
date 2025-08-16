@@ -75,6 +75,18 @@ export class VertexModelDeployment extends pulumi.CustomResource {
      */
     public readonly modelImageUrl!: pulumi.Output<string>;
     /**
+     * Bucket URI to the schema for the model inference behavior
+     */
+    public readonly modelPredictionBehaviorSchemaUri!: pulumi.Output<string | undefined>;
+    /**
+     * Bucket URI to the schema for the model input
+     */
+    public readonly modelPredictionInputSchemaUri!: pulumi.Output<string>;
+    /**
+     * Bucket URI to the schema for the model output
+     */
+    public readonly modelPredictionOutputSchemaUri!: pulumi.Output<string>;
+    /**
      * Google Cloud Project ID
      */
     public readonly projectId!: pulumi.Output<string>;
@@ -111,6 +123,12 @@ export class VertexModelDeployment extends pulumi.CustomResource {
             if ((!args || args.modelImageUrl === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'modelImageUrl'");
             }
+            if ((!args || args.modelPredictionInputSchemaUri === undefined) && !opts.urn) {
+                throw new Error("Missing required property 'modelPredictionInputSchemaUri'");
+            }
+            if ((!args || args.modelPredictionOutputSchemaUri === undefined) && !opts.urn) {
+                throw new Error("Missing required property 'modelPredictionOutputSchemaUri'");
+            }
             if ((!args || args.projectId === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'projectId'");
             }
@@ -124,6 +142,9 @@ export class VertexModelDeployment extends pulumi.CustomResource {
             resourceInputs["minReplicas"] = (args ? args.minReplicas : undefined) ?? 1;
             resourceInputs["modelArtifactsBucketUri"] = args ? args.modelArtifactsBucketUri : undefined;
             resourceInputs["modelImageUrl"] = args ? args.modelImageUrl : undefined;
+            resourceInputs["modelPredictionBehaviorSchemaUri"] = args ? args.modelPredictionBehaviorSchemaUri : undefined;
+            resourceInputs["modelPredictionInputSchemaUri"] = args ? args.modelPredictionInputSchemaUri : undefined;
+            resourceInputs["modelPredictionOutputSchemaUri"] = args ? args.modelPredictionOutputSchemaUri : undefined;
             resourceInputs["projectId"] = args ? args.projectId : undefined;
             resourceInputs["region"] = args ? args.region : undefined;
             resourceInputs["serviceAccount"] = args ? args.serviceAccount : undefined;
@@ -142,6 +163,9 @@ export class VertexModelDeployment extends pulumi.CustomResource {
             resourceInputs["minReplicas"] = undefined /*out*/;
             resourceInputs["modelArtifactsBucketUri"] = undefined /*out*/;
             resourceInputs["modelImageUrl"] = undefined /*out*/;
+            resourceInputs["modelPredictionBehaviorSchemaUri"] = undefined /*out*/;
+            resourceInputs["modelPredictionInputSchemaUri"] = undefined /*out*/;
+            resourceInputs["modelPredictionOutputSchemaUri"] = undefined /*out*/;
             resourceInputs["projectId"] = undefined /*out*/;
             resourceInputs["region"] = undefined /*out*/;
             resourceInputs["serviceAccount"] = undefined /*out*/;
@@ -184,6 +208,18 @@ export interface VertexModelDeploymentArgs {
      * Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers
      */
     modelImageUrl: pulumi.Input<string>;
+    /**
+     * Bucket URI to the schema for the model inference behavior
+     */
+    modelPredictionBehaviorSchemaUri?: pulumi.Input<string>;
+    /**
+     * Bucket URI to the schema for the model input
+     */
+    modelPredictionInputSchemaUri: pulumi.Input<string>;
+    /**
+     * Bucket URI to the schema for the model output
+     */
+    modelPredictionOutputSchemaUri: pulumi.Input<string>;
     /**
      * Google Cloud Project ID
      */

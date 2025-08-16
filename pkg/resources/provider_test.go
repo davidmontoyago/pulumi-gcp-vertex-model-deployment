@@ -23,6 +23,9 @@ func TestVertexModelDeploymentCreate_ModelUploadAndDeployRequests(t *testing.T) 
 	endpointID := "test-endpoint"
 	modelImageURL := "gcr.io/test-project/custom-model:latest"
 	modelArtifactsBucketURI := "gs://test-bucket/model-artifacts/"
+	modelPredictionInputSchemaURI := "gs://test-bucket/schemas/input_schema.json"
+	modelPredictionOutputSchemaURI := "gs://test-bucket/schemas/output_schema.json"
+	modelPredictionBehaviorSchemaURI := "gs://test-bucket/schemas/behavior_schema.json"
 	machineType := "n1-standard-2"
 	minReplicas := 1
 	maxReplicas := 3
@@ -38,17 +41,20 @@ func TestVertexModelDeploymentCreate_ModelUploadAndDeployRequests(t *testing.T) 
 		Name:   resourceName,
 		DryRun: false, // Explicitly set to false to ensure real execution
 		Inputs: VertexModelDeploymentArgs{
-			ProjectID:               projectID,
-			Region:                  region,
-			EndpointID:              endpointID,
-			ModelImageURL:           modelImageURL,
-			ModelArtifactsBucketURI: modelArtifactsBucketURI,
-			MachineType:             machineType,
-			MinReplicas:             minReplicas,
-			MaxReplicas:             maxReplicas,
-			TrafficPercent:          trafficPercent,
-			ServiceAccount:          serviceAccount,
-			Labels:                  map[string]string{"env": "test", "component": "ml"},
+			ProjectID:                        projectID,
+			Region:                           region,
+			EndpointID:                       endpointID,
+			ModelImageURL:                    modelImageURL,
+			ModelArtifactsBucketURI:          modelArtifactsBucketURI,
+			ModelPredictionInputSchemaURI:    modelPredictionInputSchemaURI,
+			ModelPredictionOutputSchemaURI:   modelPredictionOutputSchemaURI,
+			ModelPredictionBehaviorSchemaURI: modelPredictionBehaviorSchemaURI,
+			MachineType:                      machineType,
+			MinReplicas:                      minReplicas,
+			MaxReplicas:                      maxReplicas,
+			TrafficPercent:                   trafficPercent,
+			ServiceAccount:                   serviceAccount,
+			Labels:                           map[string]string{"env": "test", "component": "ml"},
 		},
 	}
 
@@ -115,6 +121,20 @@ func TestVertexModelDeploymentCreate_ModelUploadAndDeployRequests(t *testing.T) 
 	// Assert artifact URI
 	if model.ArtifactUri != modelArtifactsBucketURI {
 		t.Errorf("Expected ArtifactUri %s, got %s", modelArtifactsBucketURI, model.ArtifactUri)
+	}
+
+	// Assert prediction schemas
+	if model.PredictSchemata == nil {
+		t.Fatal("PredictSchemata is nil")
+	}
+	if model.PredictSchemata.InstanceSchemaUri != modelPredictionInputSchemaURI {
+		t.Errorf("Expected InstanceSchemaUri %s, got %s", modelPredictionInputSchemaURI, model.PredictSchemata.InstanceSchemaUri)
+	}
+	if model.PredictSchemata.PredictionSchemaUri != modelPredictionOutputSchemaURI {
+		t.Errorf("Expected PredictionSchemaUri %s, got %s", modelPredictionOutputSchemaURI, model.PredictSchemata.PredictionSchemaUri)
+	}
+	if model.PredictSchemata.ParametersSchemaUri != modelPredictionBehaviorSchemaURI {
+		t.Errorf("Expected ParametersSchemaUri %s, got %s", modelPredictionBehaviorSchemaURI, model.PredictSchemata.ParametersSchemaUri)
 	}
 
 	// Assert labels

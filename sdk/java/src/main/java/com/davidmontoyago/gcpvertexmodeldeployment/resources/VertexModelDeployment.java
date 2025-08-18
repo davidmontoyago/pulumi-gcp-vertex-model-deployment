@@ -161,6 +161,12 @@ public class VertexModelDeployment extends com.pulumi.resources.CustomResource {
     public Output<String> modelImageUrl() {
         return this.modelImageUrl;
     }
+    @Export(name="modelName", refs={String.class}, tree="[0]")
+    private Output<String> modelName;
+
+    public Output<String> modelName() {
+        return this.modelName;
+    }
     /**
      * Bucket URI to the schema for the model inference behavior
      * 

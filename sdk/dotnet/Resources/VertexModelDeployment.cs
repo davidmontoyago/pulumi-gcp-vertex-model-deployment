@@ -76,6 +76,9 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources
         [Output("modelImageUrl")]
         public Output<string> ModelImageUrl { get; private set; } = null!;
 
+        [Output("modelName")]
+        public Output<string> ModelName { get; private set; } = null!;
+
         /// <summary>
         /// Bucket URI to the schema for the model inference behavior
         /// </summary>

@@ -36,6 +36,7 @@ type VertexModelDeployment struct {
 	ModelArtifactsBucketUri pulumi.StringOutput `pulumi:"modelArtifactsBucketUri"`
 	// Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers
 	ModelImageUrl pulumi.StringOutput `pulumi:"modelImageUrl"`
+	ModelName     pulumi.StringOutput `pulumi:"modelName"`
 	// Bucket URI to the schema for the model inference behavior
 	ModelPredictionBehaviorSchemaUri pulumi.StringPtrOutput `pulumi:"modelPredictionBehaviorSchemaUri"`
 	// Bucket URI to the schema for the model input
@@ -322,6 +323,10 @@ func (o VertexModelDeploymentOutput) ModelArtifactsBucketUri() pulumi.StringOutp
 // Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers
 func (o VertexModelDeploymentOutput) ModelImageUrl() pulumi.StringOutput {
 	return o.ApplyT(func(v *VertexModelDeployment) pulumi.StringOutput { return v.ModelImageUrl }).(pulumi.StringOutput)
+}
+
+func (o VertexModelDeploymentOutput) ModelName() pulumi.StringOutput {
+	return o.ApplyT(func(v *VertexModelDeployment) pulumi.StringOutput { return v.ModelName }).(pulumi.StringOutput)
 }
 
 // Bucket URI to the schema for the model inference behavior

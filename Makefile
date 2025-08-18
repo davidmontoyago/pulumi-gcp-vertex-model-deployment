@@ -1,6 +1,6 @@
 GOOS							?= $${GOOS:-linux}
 GOARCH						?= $${GOARCH:-amd64}
-PROVIDER_VERSION	?= $${PROVIDER_VERSION:-0.0.1}
+PROVIDER_VERSION	?= $${PROVIDER_VERSION:-0.0.0}
 PROVIDER_NAME			:= gcp-vertex-model-deployment
 PROVIDER_PATH			:= github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment
 PLUGIN_NAME				:= pulumi-resource-$(PROVIDER_NAME)-v$(PROVIDER_VERSION)-$(GOOS)-$(GOARCH)
@@ -38,7 +38,7 @@ gen-sdk: build
 	@echo "SDKs generated successfully"
 	cd sdk/go && go mod init github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment/sdk/go && go mod tidy
 
-plugin-local: gen-sdk plugin
+plugin-local: plugin
 	@echo "Installing provider..."
 	pulumi plugin install resource gcp-vertex-model-deployment v$(PROVIDER_VERSION) --file ./build/$(PLUGIN_NAME)
 	@echo "Plugin installed successfully"

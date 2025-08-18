@@ -73,6 +73,7 @@ func (args *VertexModelDeploymentArgs) Annotate(annotator infer.Annotator) {
 type VertexModelDeploymentState struct {
 	VertexModelDeploymentArgs
 	DeployedModelID string `pulumi:"deployedModelId"`
+	ModelName       string `pulumi:"modelName"`
 	EndpointName    string `pulumi:"endpointName"`
 	CreateTime      string `pulumi:"createTime"`
 }
@@ -174,6 +175,7 @@ func (v VertexModelDeployment) Create(
 	}
 
 	state.DeployedModelID = deployedModelID
+	state.ModelName = modelName
 	state.EndpointName = req.Inputs.EndpointID
 	state.CreateTime = time.Now().Format(time.RFC3339)
 
@@ -231,6 +233,7 @@ func (VertexModelDeployment) Update(
 		Output: VertexModelDeploymentState{
 			VertexModelDeploymentArgs: req.Inputs,
 			DeployedModelID:           req.State.DeployedModelID,
+			ModelName:                 req.State.ModelName,
 			EndpointName:              req.State.EndpointName,
 			CreateTime:                req.State.CreateTime,
 		},

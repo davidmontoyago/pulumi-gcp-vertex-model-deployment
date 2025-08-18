@@ -74,6 +74,7 @@ export class VertexModelDeployment extends pulumi.CustomResource {
      * Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers
      */
     public readonly modelImageUrl!: pulumi.Output<string>;
+    public /*out*/ readonly modelName!: pulumi.Output<string>;
     /**
      * Bucket URI to the schema for the model inference behavior
      */
@@ -152,6 +153,7 @@ export class VertexModelDeployment extends pulumi.CustomResource {
             resourceInputs["createTime"] = undefined /*out*/;
             resourceInputs["deployedModelId"] = undefined /*out*/;
             resourceInputs["endpointName"] = undefined /*out*/;
+            resourceInputs["modelName"] = undefined /*out*/;
         } else {
             resourceInputs["createTime"] = undefined /*out*/;
             resourceInputs["deployedModelId"] = undefined /*out*/;
@@ -163,6 +165,7 @@ export class VertexModelDeployment extends pulumi.CustomResource {
             resourceInputs["minReplicas"] = undefined /*out*/;
             resourceInputs["modelArtifactsBucketUri"] = undefined /*out*/;
             resourceInputs["modelImageUrl"] = undefined /*out*/;
+            resourceInputs["modelName"] = undefined /*out*/;
             resourceInputs["modelPredictionBehaviorSchemaUri"] = undefined /*out*/;
             resourceInputs["modelPredictionInputSchemaUri"] = undefined /*out*/;
             resourceInputs["modelPredictionOutputSchemaUri"] = undefined /*out*/;

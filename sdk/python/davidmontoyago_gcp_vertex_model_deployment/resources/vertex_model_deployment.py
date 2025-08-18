@@ -376,6 +376,7 @@ class VertexModelDeployment(pulumi.CustomResource):
             __props__.__dict__["create_time"] = None
             __props__.__dict__["deployed_model_id"] = None
             __props__.__dict__["endpoint_name"] = None
+            __props__.__dict__["model_name"] = None
         super(VertexModelDeployment, __self__).__init__(
             'gcp-vertex-model-deployment:resources:VertexModelDeployment',
             resource_name,
@@ -408,6 +409,7 @@ class VertexModelDeployment(pulumi.CustomResource):
         __props__.__dict__["min_replicas"] = None
         __props__.__dict__["model_artifacts_bucket_uri"] = None
         __props__.__dict__["model_image_url"] = None
+        __props__.__dict__["model_name"] = None
         __props__.__dict__["model_prediction_behavior_schema_uri"] = None
         __props__.__dict__["model_prediction_input_schema_uri"] = None
         __props__.__dict__["model_prediction_output_schema_uri"] = None
@@ -496,6 +498,11 @@ class VertexModelDeployment(pulumi.CustomResource):
         Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers
         """
         return pulumi.get(self, "model_image_url")
+
+    @_builtins.property
+    @pulumi.getter(name="modelName")
+    def model_name(self) -> pulumi.Output[_builtins.str]:
+        return pulumi.get(self, "model_name")
 
     @_builtins.property
     @pulumi.getter(name="modelPredictionBehaviorSchemaUri")

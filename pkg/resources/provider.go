@@ -16,57 +16,9 @@ import (
 // VertexModelDeployment represents a Pulumi resource for deploying models to Vertex AI endpoints.
 type VertexModelDeployment struct{}
 
-// testFactoryRegistry holds test factories for dependency injection during testing
-var testFactoryRegistry struct {
-	modelClientFactory    services.ModelClientFactory
-	endpointClientFactory services.EndpointClientFactory
-}
-
 // Annotate provides metadata and descriptions for the VertexModelDeployment resource.
 func (VertexModelDeployment) Annotate(annotator infer.Annotator) {
 	annotator.Describe(&VertexModelDeployment{}, "Deploys a model to a Vertex AI endpoint")
-}
-
-// VertexModelDeploymentArgs defines the input arguments for creating a Vertex AI model deployment.
-type VertexModelDeploymentArgs struct {
-	ProjectID                        string            `pulumi:"projectId"`
-	Region                           string            `pulumi:"region"`
-	EndpointID                       string            `pulumi:"endpointId"`
-	ModelImageURL                    string            `pulumi:"modelImageUrl"`
-	ModelArtifactsBucketURI          string            `pulumi:"modelArtifactsBucketUri"`
-	ModelPredictionInputSchemaURI    string            `pulumi:"modelPredictionInputSchemaUri"`
-	ModelPredictionOutputSchemaURI   string            `pulumi:"modelPredictionOutputSchemaUri"`
-	ModelPredictionBehaviorSchemaURI string            `pulumi:"modelPredictionBehaviorSchemaUri,optional"`
-	MachineType                      string            `pulumi:"machineType,optional"`
-	MinReplicas                      int               `pulumi:"minReplicas,optional"`
-	MaxReplicas                      int               `pulumi:"maxReplicas,optional"`
-	TrafficPercent                   int               `pulumi:"trafficPercent,optional"`
-	ServiceAccount                   string            `pulumi:"serviceAccount,optional"`
-	Labels                           map[string]string `pulumi:"labels,optional"`
-}
-
-// Annotate provides metadata and default values for the VertexModelDeploymentArgs.
-func (args *VertexModelDeploymentArgs) Annotate(annotator infer.Annotator) {
-	annotator.Describe(&args.ProjectID, "Google Cloud Project ID")
-	annotator.Describe(&args.Region, "Google Cloud region")
-	annotator.Describe(&args.EndpointID, "Vertex AI Endpoint ID")
-	annotator.Describe(&args.ModelImageURL, "Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers")
-	annotator.Describe(&args.ModelArtifactsBucketURI, "Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts")
-	annotator.Describe(&args.ModelPredictionInputSchemaURI, "Bucket URI to the schema for the model input")
-	annotator.Describe(&args.ModelPredictionOutputSchemaURI, "Bucket URI to the schema for the model output")
-	annotator.Describe(&args.ModelPredictionBehaviorSchemaURI, "Bucket URI to the schema for the model inference behavior")
-	annotator.Describe(&args.MachineType, "Machine type for deployment")
-	annotator.Describe(&args.MinReplicas, "Minimum number of replicas")
-	annotator.Describe(&args.MaxReplicas, "Maximum number of replicas")
-	annotator.Describe(&args.TrafficPercent, "Traffic percentage for this deployment")
-	annotator.Describe(&args.ServiceAccount, "Service account for the deployment")
-	annotator.Describe(&args.Labels, "Labels for the deployment")
-
-	// Set defaults
-	annotator.SetDefault(&args.MachineType, "n1-standard-2")
-	annotator.SetDefault(&args.MinReplicas, 1)
-	annotator.SetDefault(&args.MaxReplicas, 3)
-	annotator.SetDefault(&args.TrafficPercent, 100)
 }
 
 // VertexModelDeploymentState represents the state of a deployed Vertex AI model.
@@ -97,13 +49,11 @@ func (v VertexModelDeployment) Create(
 
 	if req.DryRun {
 		return infer.CreateResponse[VertexModelDeploymentState]{
-			ID: fmt.Sprintf("%s-%s", req.Inputs.EndpointID, req.Inputs.ModelImageURL),
+			ID: fmt.Sprintf("%s-%s-%s", req.Inputs.ProjectID, req.Inputs.Region, req.Name),
 		}, nil
 	}
 
-	// Create clients using the factories
 	modelClientFactory := v.getModelClientFactory()
-	endpointClientFactory := v.getEndpointClientFactory()
 
 	modelClient, err := modelClientFactory(ctx, req.Inputs.Region)
 	if err != nil {
@@ -113,17 +63,6 @@ func (v VertexModelDeployment) Create(
 	defer func() {
 		if closeErr := modelClient.Close(); closeErr != nil {
 			log.Printf("failed to close model client: %v", closeErr)
-		}
-	}()
-
-	endpointClient, err := endpointClientFactory(ctx, req.Inputs.Region)
-	if err != nil {
-		return infer.CreateResponse[VertexModelDeploymentState]{},
-			fmt.Errorf("failed to create endpoint client: %w", err)
-	}
-	defer func() {
-		if closeErr := endpointClient.Close(); closeErr != nil {
-			log.Printf("failed to close endpoint client: %v", closeErr)
 		}
 	}()
 
@@ -150,37 +89,53 @@ func (v VertexModelDeployment) Create(
 			fmt.Errorf("failed to upload model: %w", err)
 	}
 
-	// Create the model deployment service
-	deployer := services.NewVertexModelDeploy(ctx, endpointClient, req.Inputs.ProjectID, req.Inputs.Region)
-	defer func() {
-		if closeErr := deployer.Close(); closeErr != nil {
-			log.Printf("failed to close model deployment service: %v", closeErr)
-		}
-	}()
-
-	// Deploy the model
-	deployedModelID, err := deployer.Deploy(
-		ctx,
-		req.Inputs.EndpointID,
-		modelName,
-		req.Name,
-		req.Inputs.MachineType,
-		req.Inputs.ServiceAccount,
-		safeIntToInt32(req.Inputs.MinReplicas),
-		safeIntToInt32(req.Inputs.MaxReplicas),
-	)
-	if err != nil {
-		return infer.CreateResponse[VertexModelDeploymentState]{},
-			fmt.Errorf("failed to deploy model: %w", err)
-	}
-
-	state.DeployedModelID = deployedModelID
 	state.ModelName = modelName
-	state.EndpointName = req.Inputs.EndpointID
 	state.CreateTime = time.Now().Format(time.RFC3339)
 
+	// Only deploy to endpoint if endpoint deployment is configured
+	if isEndpointDeploymentEnabled(req.Inputs) {
+		endpointClientFactory := v.getEndpointClientFactory()
+		endpointClient, err := endpointClientFactory(ctx, req.Inputs.Region)
+		if err != nil {
+			return infer.CreateResponse[VertexModelDeploymentState]{},
+				fmt.Errorf("failed to create endpoint client: %w", err)
+		}
+		defer func() {
+			if closeErr := endpointClient.Close(); closeErr != nil {
+				log.Printf("failed to close endpoint client: %v", closeErr)
+			}
+		}()
+
+		// Create the model deployment service
+		deployer := services.NewVertexModelDeploy(ctx, endpointClient, req.Inputs.ProjectID, req.Inputs.Region)
+		defer func() {
+			if closeErr := deployer.Close(); closeErr != nil {
+				log.Printf("failed to close endpoint model deployment service: %v", closeErr)
+			}
+		}()
+
+		// Deploy the model to the endpoint
+		endpointConfig := convertEndpointDeploymentArgs(req.Inputs.EndpointModelDeployment)
+		deployedModelID, err := deployer.Deploy(
+			ctx,
+			modelName,
+			req.Name,
+			req.Inputs.ServiceAccount,
+			endpointConfig,
+		)
+		if err != nil {
+			return infer.CreateResponse[VertexModelDeploymentState]{},
+				fmt.Errorf("failed to deploy model: %w", err)
+		}
+
+		state.DeployedModelID = deployedModelID
+		state.EndpointName = req.Inputs.EndpointModelDeployment.EndpointID
+	}
+
+	resourceID := fmt.Sprintf("%s-%s-%s", req.Inputs.ProjectID, req.Inputs.Region, req.Name)
+
 	return infer.CreateResponse[VertexModelDeploymentState]{
-		ID:     deployedModelID,
+		ID:     resourceID,
 		Output: state,
 	}, nil
 }
@@ -191,32 +146,35 @@ func (v VertexModelDeployment) Delete(
 	req infer.DeleteRequest[VertexModelDeploymentState],
 ) (infer.DeleteResponse, error) {
 
-	// Create endpoint client using the factory
-	endpointClientFactory := v.getEndpointClientFactory()
-	endpointClient, err := endpointClientFactory(ctx, req.State.Region)
-	if err != nil {
-		return infer.DeleteResponse{}, fmt.Errorf("failed to create endpoint client: %w", err)
-	}
-	defer func() {
-		if closeErr := endpointClient.Close(); closeErr != nil {
-			log.Printf("failed to close endpoint client: %v", closeErr)
+	// Only undeploy from endpoint if the model was deployed to an endpoint
+	if req.State.DeployedModelID != "" && req.State.EndpointName != "" {
+		// Create endpoint client using the factory
+		endpointClientFactory := v.getEndpointClientFactory()
+		endpointClient, err := endpointClientFactory(ctx, req.State.Region)
+		if err != nil {
+			return infer.DeleteResponse{}, fmt.Errorf("failed to create endpoint client: %w", err)
 		}
-	}()
+		defer func() {
+			if closeErr := endpointClient.Close(); closeErr != nil {
+				log.Printf("failed to close endpoint client: %v", closeErr)
+			}
+		}()
 
-	undeployReq := &aiplatformpb.UndeployModelRequest{
-		Endpoint: fmt.Sprintf("projects/%s/locations/%s/endpoints/%s",
-			req.State.ProjectID, req.State.Region, req.State.EndpointID),
-		DeployedModelId: req.State.DeployedModelID,
-	}
+		undeployReq := &aiplatformpb.UndeployModelRequest{
+			Endpoint: fmt.Sprintf("projects/%s/locations/%s/endpoints/%s",
+				req.State.ProjectID, req.State.Region, req.State.EndpointName),
+			DeployedModelId: req.State.DeployedModelID,
+		}
 
-	undeployOperation, err := endpointClient.UndeployModel(ctx, undeployReq)
-	if err != nil {
-		return infer.DeleteResponse{}, fmt.Errorf("failed to undeploy model: %w", err)
-	}
+		undeployOperation, err := endpointClient.UndeployModel(ctx, undeployReq)
+		if err != nil {
+			return infer.DeleteResponse{}, fmt.Errorf("failed to undeploy model: %w", err)
+		}
 
-	_, err = undeployOperation.Wait(ctx)
-	if err != nil {
-		return infer.DeleteResponse{}, fmt.Errorf("failed to wait for undeployment: %w", err)
+		_, err = undeployOperation.Wait(ctx)
+		if err != nil {
+			return infer.DeleteResponse{}, fmt.Errorf("failed to wait for undeployment: %w", err)
+		}
 	}
 
 	return infer.DeleteResponse{}, nil
@@ -246,6 +204,11 @@ func (v VertexModelDeployment) Read(
 	req infer.ReadRequest[VertexModelDeploymentArgs, VertexModelDeploymentState],
 ) (infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState], error) {
 
+	// Only check endpoint deployment if the model was deployed to an endpoint
+	if req.State.DeployedModelID == "" || req.State.EndpointName == "" {
+		return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{}, nil
+	}
+
 	// Create endpoint client using the factory
 	endpointClientFactory := v.getEndpointClientFactory()
 	endpointClient, err := endpointClientFactory(ctx, req.State.Region)
@@ -260,7 +223,7 @@ func (v VertexModelDeployment) Read(
 
 	getReq := &aiplatformpb.GetEndpointRequest{
 		Name: fmt.Sprintf("projects/%s/locations/%s/endpoints/%s",
-			req.State.ProjectID, req.State.Region, req.State.EndpointID),
+			req.State.ProjectID, req.State.Region, req.State.EndpointName),
 	}
 
 	endpoint, err := endpointClient.GetEndpoint(ctx, getReq)
@@ -286,6 +249,12 @@ func (v VertexModelDeployment) Read(
 	return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState](req), nil
 }
 
+// testFactoryRegistry holds test factories for dependency injection during testing
+var testFactoryRegistry struct {
+	modelClientFactory    services.ModelClientFactory
+	endpointClientFactory services.EndpointClientFactory
+}
+
 // getModelClientFactory returns the model client factory, defaulting to production factory if nil.
 func (v VertexModelDeployment) getModelClientFactory() services.ModelClientFactory {
 	if testFactoryRegistry.modelClientFactory == nil {
@@ -302,4 +271,20 @@ func (v VertexModelDeployment) getEndpointClientFactory() services.EndpointClien
 	}
 
 	return testFactoryRegistry.endpointClientFactory
+}
+
+// convertEndpointDeploymentArgs converts EndpointModelDeploymentArgs to services.EndpointModelDeploymentConfig
+func convertEndpointDeploymentArgs(args EndpointModelDeploymentArgs) services.EndpointModelDeploymentConfig {
+	return services.EndpointModelDeploymentConfig{
+		EndpointID:     args.EndpointID,
+		MachineType:    args.MachineType,
+		MinReplicas:    safeIntToInt32(args.MinReplicas),
+		MaxReplicas:    safeIntToInt32(args.MaxReplicas),
+		TrafficPercent: safeIntToInt32(args.TrafficPercent),
+	}
+}
+
+// isEndpointDeploymentEnabled checks if endpoint deployment is configured
+func isEndpointDeploymentEnabled(args VertexModelDeploymentArgs) bool {
+	return args.EndpointModelDeployment.EndpointID != ""
 }

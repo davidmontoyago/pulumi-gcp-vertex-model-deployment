@@ -3,7 +3,7 @@
 [![Develop](https://github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment/actions/workflows/develop.yaml/badge.svg)](https://github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment/actions/workflows/develop.yaml) [![Go Coverage](https://raw.githubusercontent.com/wiki/davidmontoyago/pulumi-gcp-vertex-model-deployment/coverage.svg)](https://raw.githack.com/wiki/davidmontoyago/pulumi-gcp-vertex-model-deployment/coverage.html) [![Go Reference](https://pkg.go.dev/badge/github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment.svg)](https://pkg.go.dev/github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment)
 
 
-Pulumi custom provider for Vertex models.
+Pulumi custom provider to upload a model to Vertex and optionally deploy it to a Vertex Endpoint.
 
 Upload and deploy a model from a Docker image to a Vertex endpoint:
 ```go

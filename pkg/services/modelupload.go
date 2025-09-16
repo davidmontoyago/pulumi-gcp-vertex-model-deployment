@@ -108,7 +108,7 @@ func (u *VertexModelUpload) Upload(ctx context.Context, params ModelUpload) (str
 	if modelUploadOp == nil {
 		log.Printf("Warning: model upload operation is nil?!? This must be a mocked client. Logging error and moving on.")
 
-		return "", nil
+		return "MOCKED_MODEL_NAME", nil
 	}
 
 	// TODO make timeout configurable

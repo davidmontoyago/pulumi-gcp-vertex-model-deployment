@@ -1,0 +1,70 @@
+// Package resources provides Pulumi resource implementations for GCP Vertex AI model upload and deployment.
+package resources
+
+import "github.com/pulumi/pulumi-go-provider/infer"
+
+// VertexModelDeploymentArgs defines the input arguments for creating a Vertex AI model deployment.
+type VertexModelDeploymentArgs struct {
+	ProjectID                        string `pulumi:"projectId"`
+	Region                           string `pulumi:"region"`
+	ModelImageURL                    string `pulumi:"modelImageUrl"`
+	ModelArtifactsBucketURI          string `pulumi:"modelArtifactsBucketUri"`
+	ModelPredictionInputSchemaURI    string `pulumi:"modelPredictionInputSchemaUri"`
+	ModelPredictionOutputSchemaURI   string `pulumi:"modelPredictionOutputSchemaUri"`
+	ModelPredictionBehaviorSchemaURI string `pulumi:"modelPredictionBehaviorSchemaUri,optional"`
+
+	// Target endpoint for the model deployment.
+	//
+	// Set only when serving the model on a Vertex AI Endpoint.
+	// Deploying a model to a Vertex AI Endpoint is not yet supported by Terraform
+	// nor the Pulumi Google Cloud Native provider, hence why this custom provider
+	// exists.
+	// See: https://github.com/hashicorp/terraform-provider-google/issues/15303
+	//
+	// When deploying the model as a Batched Prediction Job, this field must be
+	// unset and the batch job must be created using the Pulumi Google Cloud Native
+	// provider.
+	EndpointModelDeployment EndpointModelDeploymentArgs `pulumi:"endpointModelDeployment,optional"`
+
+	ServiceAccount string            `pulumi:"serviceAccount,optional"`
+	Labels         map[string]string `pulumi:"labels,optional"`
+}
+
+// EndpointModelDeploymentArgs defines the input arguments for deploying an
+// uploaded model to a Vertex AI endpoint.
+type EndpointModelDeploymentArgs struct {
+	EndpointID     string `pulumi:"endpointId"`
+	MachineType    string `pulumi:"machineType,optional"`
+	MinReplicas    int    `pulumi:"minReplicas,optional"`
+	MaxReplicas    int    `pulumi:"maxReplicas,optional"`
+	TrafficPercent int    `pulumi:"trafficPercent,optional"`
+}
+
+// Annotate provides metadata and default values for the VertexModelDeploymentArgs.
+func (args *VertexModelDeploymentArgs) Annotate(annotator infer.Annotator) {
+	annotator.Describe(&args.ProjectID, "Google Cloud Project ID")
+	annotator.Describe(&args.Region, "Google Cloud region")
+	annotator.Describe(&args.ModelImageURL, "Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers")
+	annotator.Describe(&args.ModelArtifactsBucketURI, "Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts")
+	annotator.Describe(&args.ModelPredictionInputSchemaURI, "Bucket URI to the schema for the model input")
+	annotator.Describe(&args.ModelPredictionOutputSchemaURI, "Bucket URI to the schema for the model output")
+	annotator.Describe(&args.ModelPredictionBehaviorSchemaURI, "Bucket URI to the schema for the model inference behavior")
+	annotator.Describe(&args.EndpointModelDeployment, "Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.")
+	annotator.Describe(&args.ServiceAccount, "Service account for the deployment")
+	annotator.Describe(&args.Labels, "Labels for the deployment")
+}
+
+// Annotate provides metadata and default values for the EndpointModelDeploymentArgs.
+func (args *EndpointModelDeploymentArgs) Annotate(annotator infer.Annotator) {
+	annotator.Describe(&args.EndpointID, "Vertex AI Endpoint ID")
+	annotator.Describe(&args.MachineType, "Machine type for deployment")
+	annotator.Describe(&args.MinReplicas, "Minimum number of replicas")
+	annotator.Describe(&args.MaxReplicas, "Maximum number of replicas")
+	annotator.Describe(&args.TrafficPercent, "Traffic percentage for this deployment")
+
+	// Set defaults
+	annotator.SetDefault(&args.MachineType, "n1-standard-2")
+	annotator.SetDefault(&args.MinReplicas, 1)
+	annotator.SetDefault(&args.MaxReplicas, 3)
+	annotator.SetDefault(&args.TrafficPercent, 100)
+}

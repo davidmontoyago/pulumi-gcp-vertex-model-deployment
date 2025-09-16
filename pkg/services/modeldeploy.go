@@ -9,9 +9,18 @@ import (
 	"cloud.google.com/go/aiplatform/apiv1/aiplatformpb"
 )
 
+// EndpointModelDeploymentConfig holds configuration for deploying a model to an endpoint.
+type EndpointModelDeploymentConfig struct {
+	EndpointID     string
+	MachineType    string
+	MinReplicas    int32
+	MaxReplicas    int32
+	TrafficPercent int32
+}
+
 // ModelDeployer interface defines operations for deploying models.
 type ModelDeployer interface {
-	Deploy(ctx context.Context, endpointID, modelName, name, machineType, serviceAccount string, minReplicas, maxReplicas int32) (string, error)
+	Deploy(ctx context.Context, modelName, displayName, serviceAccount string, endpointConfig EndpointModelDeploymentConfig) (string, error)
 	Close() error
 }
 
@@ -32,19 +41,19 @@ func NewVertexModelDeploy(_ context.Context, endpointClient VertexEndpointClient
 }
 
 // Deploy deploys a model to a Vertex AI endpoint and returns the deployed model ID.
-func (d *VertexModelDeploy) Deploy(ctx context.Context, endpointID, modelName, name, machineType, serviceAccount string, minReplicas, maxReplicas int32) (string, error) {
+func (d *VertexModelDeploy) Deploy(ctx context.Context, modelName, displayName, serviceAccount string, endpointConfig EndpointModelDeploymentConfig) (string, error) {
 	// Build the deployment request
 	deployedModel := &aiplatformpb.DeployedModel{
 		// Expected format: "projects/%s/locations/%s/models/%s"
 		Model:       modelName,
-		DisplayName: name,
+		DisplayName: displayName,
 		PredictionResources: &aiplatformpb.DeployedModel_DedicatedResources{
 			DedicatedResources: &aiplatformpb.DedicatedResources{
 				MachineSpec: &aiplatformpb.MachineSpec{
-					MachineType: machineType,
+					MachineType: endpointConfig.MachineType,
 				},
-				MinReplicaCount: minReplicas,
-				MaxReplicaCount: maxReplicas,
+				MinReplicaCount: endpointConfig.MinReplicas,
+				MaxReplicaCount: endpointConfig.MaxReplicas,
 			},
 		},
 	}
@@ -55,11 +64,16 @@ func (d *VertexModelDeploy) Deploy(ctx context.Context, endpointID, modelName, n
 
 	deployReq := &aiplatformpb.DeployModelRequest{
 		Endpoint: fmt.Sprintf("projects/%s/locations/%s/endpoints/%s",
-			d.projectID, d.region, endpointID),
+			d.projectID, d.region, endpointConfig.EndpointID),
 		DeployedModel: deployedModel,
-		TrafficSplit:  map[string]int32{
-			// TODO set for parallel model deployments
-		},
+		TrafficSplit:  map[string]int32{},
+	}
+
+	// Set traffic split if specified
+	if endpointConfig.TrafficPercent > 0 {
+		deployReq.TrafficSplit = map[string]int32{
+			"0": endpointConfig.TrafficPercent,
+		}
 	}
 
 	// Execute the deployment

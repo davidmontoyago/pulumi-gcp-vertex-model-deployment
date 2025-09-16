@@ -13,8 +13,8 @@ import (
 	"github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment/pkg/services"
 )
 
+//nolint:paralleltest,tparallel // Cannot run in parallel due to shared testFactoryRegistry
 func TestVertexModelDeploymentCreate_ModelUploadAndDeployRequests(t *testing.T) {
-	t.Parallel()
 	ctx := context.Background()
 
 	// Test inputs
@@ -43,18 +43,20 @@ func TestVertexModelDeploymentCreate_ModelUploadAndDeployRequests(t *testing.T) 
 		Inputs: VertexModelDeploymentArgs{
 			ProjectID:                        projectID,
 			Region:                           region,
-			EndpointID:                       endpointID,
 			ModelImageURL:                    modelImageURL,
 			ModelArtifactsBucketURI:          modelArtifactsBucketURI,
 			ModelPredictionInputSchemaURI:    modelPredictionInputSchemaURI,
 			ModelPredictionOutputSchemaURI:   modelPredictionOutputSchemaURI,
 			ModelPredictionBehaviorSchemaURI: modelPredictionBehaviorSchemaURI,
-			MachineType:                      machineType,
-			MinReplicas:                      minReplicas,
-			MaxReplicas:                      maxReplicas,
-			TrafficPercent:                   trafficPercent,
-			ServiceAccount:                   serviceAccount,
-			Labels:                           map[string]string{"env": "test", "component": "ml"},
+			EndpointModelDeployment: EndpointModelDeploymentArgs{
+				EndpointID:     endpointID,
+				MachineType:    machineType,
+				MinReplicas:    minReplicas,
+				MaxReplicas:    maxReplicas,
+				TrafficPercent: trafficPercent,
+			},
+			ServiceAccount: serviceAccount,
+			Labels:         map[string]string{"env": "test", "component": "ml"},
 		},
 	}
 
@@ -77,7 +79,7 @@ func TestVertexModelDeploymentCreate_ModelUploadAndDeployRequests(t *testing.T) 
 	testFactoryRegistry.modelClientFactory = modelClientFactory
 	testFactoryRegistry.endpointClientFactory = endpointClientFactory
 
-	// Execute - we expect it to fail with nil operation error
+	// Execute - we expect it to succeed despite nil operations
 	_, err := provider.Create(ctx, req)
 	if err != nil {
 		t.Fatalf("Expected nil error from mock, but got %v", err)
@@ -148,6 +150,11 @@ func TestVertexModelDeploymentCreate_ModelUploadAndDeployRequests(t *testing.T) 
 		t.Errorf("Expected label component=ml, got %s", model.Labels["component"])
 	}
 
+	// Validate DeployModelRequest was captured and has correct parameters
+	if capturedDeployRequest == nil {
+		t.Fatal("DeployModelRequest was not captured - endpoint deployment may not have been triggered")
+	}
+
 	// Assert endpoint format
 	expectedEndpoint := "projects/test-project/locations/us-central1/endpoints/test-endpoint"
 	if capturedDeployRequest.Endpoint != expectedEndpoint {
@@ -196,6 +203,88 @@ func validateDeployedModel(t *testing.T, deployedModel *aiplatformpb.DeployedMod
 
 	if predResources.MaxReplicaCount != maxReplicas {
 		t.Errorf("Expected MaxReplicaCount %d, got %d", maxReplicas, predResources.MaxReplicaCount)
+	}
+}
+
+//nolint:paralleltest,tparallel // Cannot run in parallel due to shared testFactoryRegistry
+func TestVertexModelDeploymentCreate_ModelUploadOnly(t *testing.T) {
+	ctx := context.Background()
+
+	// Test inputs for model upload without endpoint deployment
+	projectID := "test-project"
+	region := "us-central1"
+	modelImageURL := "gcr.io/test-project/custom-model:latest"
+	modelArtifactsBucketURI := "gs://test-bucket/model-artifacts/"
+	modelPredictionInputSchemaURI := "gs://test-bucket/schemas/input_schema.json"
+	modelPredictionOutputSchemaURI := "gs://test-bucket/schemas/output_schema.json"
+	serviceAccount := "test-service-account@test-project.iam.gserviceaccount.com"
+	resourceName := "test-model-upload-only"
+
+	// Variables to capture request parameters
+	var capturedUploadRequest *aiplatformpb.UploadModelRequest
+
+	req := infer.CreateRequest[VertexModelDeploymentArgs]{
+		Name:   resourceName,
+		DryRun: false,
+		Inputs: VertexModelDeploymentArgs{
+			ProjectID:                      projectID,
+			Region:                         region,
+			ModelImageURL:                  modelImageURL,
+			ModelArtifactsBucketURI:        modelArtifactsBucketURI,
+			ModelPredictionInputSchemaURI:  modelPredictionInputSchemaURI,
+			ModelPredictionOutputSchemaURI: modelPredictionOutputSchemaURI,
+			// EndpointModelDeployment is not set - model upload only
+			ServiceAccount: serviceAccount,
+			Labels:         map[string]string{"env": "test", "mode": "batch"},
+		},
+	}
+
+	modelClientFactory := MockModelClientFactory(&MockModelClient{
+		UploadModelFunc: func(_ context.Context, req *aiplatformpb.UploadModelRequest, _ ...gax.CallOption) (*aiplatform.UploadModelOperation, error) {
+			capturedUploadRequest = req
+
+			return nil, nil
+		},
+	})
+	// Provide endpoint client factory that should not be called
+	endpointClientFactory := MockEndpointClientFactory(&MockEndpointClient{
+		DeployModelFunc: func(_ context.Context, _ *aiplatformpb.DeployModelRequest, _ ...gax.CallOption) (*aiplatform.DeployModelOperation, error) {
+			t.Error("DeployModel should not be called for model-only upload")
+
+			return nil, nil
+		},
+	})
+
+	provider := &VertexModelDeployment{}
+	testFactoryRegistry.modelClientFactory = modelClientFactory
+	testFactoryRegistry.endpointClientFactory = endpointClientFactory
+
+	// Execute
+	result, err := provider.Create(ctx, req)
+	if err != nil {
+		t.Fatalf("Expected nil error from mock, but got %v", err)
+	}
+
+	// Validate UploadModelRequest was captured
+	if capturedUploadRequest == nil {
+		t.Fatal("UploadModelRequest was not captured")
+	}
+
+	// DeployModel should not have been called (verified by the mock error above)
+
+	// Validate the state doesn't include endpoint-specific fields
+	state := result.Output
+	if state.DeployedModelID != "" {
+		t.Errorf("Expected empty DeployedModelID for model-only upload, got %s", state.DeployedModelID)
+	}
+	if state.EndpointName != "" {
+		t.Errorf("Expected empty EndpointName for model-only upload, got %s", state.EndpointName)
+	}
+	if state.ModelName == "" {
+		t.Error("Expected ModelName to be set even for model-only upload")
+	}
+	if state.CreateTime == "" {
+		t.Error("Expected CreateTime to be set")
 	}
 }
 

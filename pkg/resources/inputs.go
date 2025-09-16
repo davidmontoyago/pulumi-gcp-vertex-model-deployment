@@ -12,22 +12,24 @@ type VertexModelDeploymentArgs struct {
 	ModelPredictionInputSchemaURI    string `pulumi:"modelPredictionInputSchemaUri"`
 	ModelPredictionOutputSchemaURI   string `pulumi:"modelPredictionOutputSchemaUri"`
 	ModelPredictionBehaviorSchemaURI string `pulumi:"modelPredictionBehaviorSchemaUri,optional"`
+	// If ModelImage is pointing to a private registry, this service account
+	// must have read access to the registry.
+	ServiceAccount string `pulumi:"serviceAccount"`
 
 	// Target endpoint for the model deployment.
 	//
 	// Set only when serving the model on a Vertex AI Endpoint.
 	// Deploying a model to a Vertex AI Endpoint is not yet supported by Terraform
-	// nor the Pulumi Google Cloud Native provider, hence why this custom provider
+	// nor the Pulumi Google Cloud Native provider, hence, this custom provider
 	// exists.
 	// See: https://github.com/hashicorp/terraform-provider-google/issues/15303
 	//
 	// When deploying the model as a Batched Prediction Job, this field must be
 	// unset and the batch job must be created using the Pulumi Google Cloud Native
 	// provider.
-	EndpointModelDeployment EndpointModelDeploymentArgs `pulumi:"endpointModelDeployment,optional"`
+	EndpointModelDeployment *EndpointModelDeploymentArgs `pulumi:"endpointModelDeployment,optional"`
 
-	ServiceAccount string            `pulumi:"serviceAccount,optional"`
-	Labels         map[string]string `pulumi:"labels,optional"`
+	Labels map[string]string `pulumi:"labels,optional"`
 }
 
 // EndpointModelDeploymentArgs defines the input arguments for deploying an
@@ -49,8 +51,8 @@ func (args *VertexModelDeploymentArgs) Annotate(annotator infer.Annotator) {
 	annotator.Describe(&args.ModelPredictionInputSchemaURI, "Bucket URI to the schema for the model input")
 	annotator.Describe(&args.ModelPredictionOutputSchemaURI, "Bucket URI to the schema for the model output")
 	annotator.Describe(&args.ModelPredictionBehaviorSchemaURI, "Bucket URI to the schema for the model inference behavior")
+	annotator.Describe(&args.ServiceAccount, "Service account for the model. If ModelImage is pointing to a private registry, this service account must have read access to the registry.")
 	annotator.Describe(&args.EndpointModelDeployment, "Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.")
-	annotator.Describe(&args.ServiceAccount, "Service account for the deployment")
 	annotator.Describe(&args.Labels, "Labels for the deployment")
 }
 

@@ -2,6 +2,8 @@
 // *** Do not edit by hand unless you're certain you know what you are doing! ***
 
 import * as pulumi from "@pulumi/pulumi";
+import * as inputs from "../types/input";
+import * as outputs from "../types/output";
 import * as utilities from "../utilities";
 
 /**
@@ -43,9 +45,9 @@ export class VertexModelDeployment extends pulumi.CustomResource {
      */
     public /*out*/ readonly deployedModelId!: pulumi.Output<string>;
     /**
-     * Vertex AI Endpoint ID
+     * Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
      */
-    public readonly endpointId!: pulumi.Output<string>;
+    public readonly endpointModelDeployment!: pulumi.Output<outputs.resources.EndpointModelDeploymentArgs | undefined>;
     /**
      * Full name of the endpoint
      */
@@ -54,18 +56,6 @@ export class VertexModelDeployment extends pulumi.CustomResource {
      * Labels for the deployment
      */
     public readonly labels!: pulumi.Output<{[key: string]: string} | undefined>;
-    /**
-     * Machine type for deployment
-     */
-    public readonly machineType!: pulumi.Output<string | undefined>;
-    /**
-     * Maximum number of replicas
-     */
-    public readonly maxReplicas!: pulumi.Output<number | undefined>;
-    /**
-     * Minimum number of replicas
-     */
-    public readonly minReplicas!: pulumi.Output<number | undefined>;
     /**
      * Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
      */
@@ -96,13 +86,9 @@ export class VertexModelDeployment extends pulumi.CustomResource {
      */
     public readonly region!: pulumi.Output<string>;
     /**
-     * Service account for the deployment
+     * Service account for the model. If ModelImage is pointing to a private registry, this service account must have read access to the registry.
      */
-    public readonly serviceAccount!: pulumi.Output<string | undefined>;
-    /**
-     * Traffic percentage for this deployment
-     */
-    public readonly trafficPercent!: pulumi.Output<number | undefined>;
+    public readonly serviceAccount!: pulumi.Output<string>;
 
     /**
      * Create a VertexModelDeployment resource with the given unique name, arguments, and options.
@@ -115,9 +101,6 @@ export class VertexModelDeployment extends pulumi.CustomResource {
         let resourceInputs: pulumi.Inputs = {};
         opts = opts || {};
         if (!opts.id) {
-            if ((!args || args.endpointId === undefined) && !opts.urn) {
-                throw new Error("Missing required property 'endpointId'");
-            }
             if ((!args || args.modelArtifactsBucketUri === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'modelArtifactsBucketUri'");
             }
@@ -136,11 +119,11 @@ export class VertexModelDeployment extends pulumi.CustomResource {
             if ((!args || args.region === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'region'");
             }
-            resourceInputs["endpointId"] = args ? args.endpointId : undefined;
+            if ((!args || args.serviceAccount === undefined) && !opts.urn) {
+                throw new Error("Missing required property 'serviceAccount'");
+            }
+            resourceInputs["endpointModelDeployment"] = args ? (args.endpointModelDeployment ? pulumi.output(args.endpointModelDeployment).apply(inputs.resources.endpointModelDeploymentArgsArgsProvideDefaults) : undefined) : undefined;
             resourceInputs["labels"] = args ? args.labels : undefined;
-            resourceInputs["machineType"] = (args ? args.machineType : undefined) ?? "n1-standard-2";
-            resourceInputs["maxReplicas"] = (args ? args.maxReplicas : undefined) ?? 3;
-            resourceInputs["minReplicas"] = (args ? args.minReplicas : undefined) ?? 1;
             resourceInputs["modelArtifactsBucketUri"] = args ? args.modelArtifactsBucketUri : undefined;
             resourceInputs["modelImageUrl"] = args ? args.modelImageUrl : undefined;
             resourceInputs["modelPredictionBehaviorSchemaUri"] = args ? args.modelPredictionBehaviorSchemaUri : undefined;
@@ -149,7 +132,6 @@ export class VertexModelDeployment extends pulumi.CustomResource {
             resourceInputs["projectId"] = args ? args.projectId : undefined;
             resourceInputs["region"] = args ? args.region : undefined;
             resourceInputs["serviceAccount"] = args ? args.serviceAccount : undefined;
-            resourceInputs["trafficPercent"] = (args ? args.trafficPercent : undefined) ?? 100;
             resourceInputs["createTime"] = undefined /*out*/;
             resourceInputs["deployedModelId"] = undefined /*out*/;
             resourceInputs["endpointName"] = undefined /*out*/;
@@ -157,12 +139,9 @@ export class VertexModelDeployment extends pulumi.CustomResource {
         } else {
             resourceInputs["createTime"] = undefined /*out*/;
             resourceInputs["deployedModelId"] = undefined /*out*/;
-            resourceInputs["endpointId"] = undefined /*out*/;
+            resourceInputs["endpointModelDeployment"] = undefined /*out*/;
             resourceInputs["endpointName"] = undefined /*out*/;
             resourceInputs["labels"] = undefined /*out*/;
-            resourceInputs["machineType"] = undefined /*out*/;
-            resourceInputs["maxReplicas"] = undefined /*out*/;
-            resourceInputs["minReplicas"] = undefined /*out*/;
             resourceInputs["modelArtifactsBucketUri"] = undefined /*out*/;
             resourceInputs["modelImageUrl"] = undefined /*out*/;
             resourceInputs["modelName"] = undefined /*out*/;
@@ -172,7 +151,6 @@ export class VertexModelDeployment extends pulumi.CustomResource {
             resourceInputs["projectId"] = undefined /*out*/;
             resourceInputs["region"] = undefined /*out*/;
             resourceInputs["serviceAccount"] = undefined /*out*/;
-            resourceInputs["trafficPercent"] = undefined /*out*/;
         }
         opts = pulumi.mergeOptions(utilities.resourceOptsDefaults(), opts);
         super(VertexModelDeployment.__pulumiType, name, resourceInputs, opts);
@@ -184,25 +162,13 @@ export class VertexModelDeployment extends pulumi.CustomResource {
  */
 export interface VertexModelDeploymentArgs {
     /**
-     * Vertex AI Endpoint ID
+     * Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
      */
-    endpointId: pulumi.Input<string>;
+    endpointModelDeployment?: pulumi.Input<inputs.resources.EndpointModelDeploymentArgsArgs>;
     /**
      * Labels for the deployment
      */
     labels?: pulumi.Input<{[key: string]: pulumi.Input<string>}>;
-    /**
-     * Machine type for deployment
-     */
-    machineType?: pulumi.Input<string>;
-    /**
-     * Maximum number of replicas
-     */
-    maxReplicas?: pulumi.Input<number>;
-    /**
-     * Minimum number of replicas
-     */
-    minReplicas?: pulumi.Input<number>;
     /**
      * Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
      */
@@ -232,11 +198,7 @@ export interface VertexModelDeploymentArgs {
      */
     region: pulumi.Input<string>;
     /**
-     * Service account for the deployment
+     * Service account for the model. If ModelImage is pointing to a private registry, this service account must have read access to the registry.
      */
-    serviceAccount?: pulumi.Input<string>;
-    /**
-     * Traffic percentage for this deployment
-     */
-    trafficPercent?: pulumi.Input<number>;
+    serviceAccount: pulumi.Input<string>;
 }

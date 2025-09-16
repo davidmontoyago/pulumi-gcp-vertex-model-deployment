@@ -13,84 +13,50 @@ if sys.version_info >= (3, 11):
 else:
     from typing_extensions import NotRequired, TypedDict, TypeAlias
 from .. import _utilities
+from . import outputs
+from ._inputs import *
 
 __all__ = ['VertexModelDeploymentArgs', 'VertexModelDeployment']
 
 @pulumi.input_type
 class VertexModelDeploymentArgs:
     def __init__(__self__, *,
-                 endpoint_id: pulumi.Input[_builtins.str],
                  model_artifacts_bucket_uri: pulumi.Input[_builtins.str],
                  model_image_url: pulumi.Input[_builtins.str],
                  model_prediction_input_schema_uri: pulumi.Input[_builtins.str],
                  model_prediction_output_schema_uri: pulumi.Input[_builtins.str],
                  project_id: pulumi.Input[_builtins.str],
                  region: pulumi.Input[_builtins.str],
+                 service_account: pulumi.Input[_builtins.str],
+                 endpoint_model_deployment: Optional[pulumi.Input['EndpointModelDeploymentArgsArgs']] = None,
                  labels: Optional[pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]]] = None,
-                 machine_type: Optional[pulumi.Input[_builtins.str]] = None,
-                 max_replicas: Optional[pulumi.Input[_builtins.int]] = None,
-                 min_replicas: Optional[pulumi.Input[_builtins.int]] = None,
-                 model_prediction_behavior_schema_uri: Optional[pulumi.Input[_builtins.str]] = None,
-                 service_account: Optional[pulumi.Input[_builtins.str]] = None,
-                 traffic_percent: Optional[pulumi.Input[_builtins.int]] = None):
+                 model_prediction_behavior_schema_uri: Optional[pulumi.Input[_builtins.str]] = None):
         """
         The set of arguments for constructing a VertexModelDeployment resource.
-        :param pulumi.Input[_builtins.str] endpoint_id: Vertex AI Endpoint ID
         :param pulumi.Input[_builtins.str] model_artifacts_bucket_uri: Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
         :param pulumi.Input[_builtins.str] model_image_url: Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers
         :param pulumi.Input[_builtins.str] model_prediction_input_schema_uri: Bucket URI to the schema for the model input
         :param pulumi.Input[_builtins.str] model_prediction_output_schema_uri: Bucket URI to the schema for the model output
         :param pulumi.Input[_builtins.str] project_id: Google Cloud Project ID
         :param pulumi.Input[_builtins.str] region: Google Cloud region
+        :param pulumi.Input[_builtins.str] service_account: Service account for the model. If ModelImage is pointing to a private registry, this service account must have read access to the registry.
+        :param pulumi.Input['EndpointModelDeploymentArgsArgs'] endpoint_model_deployment: Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
         :param pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]] labels: Labels for the deployment
-        :param pulumi.Input[_builtins.str] machine_type: Machine type for deployment
-        :param pulumi.Input[_builtins.int] max_replicas: Maximum number of replicas
-        :param pulumi.Input[_builtins.int] min_replicas: Minimum number of replicas
         :param pulumi.Input[_builtins.str] model_prediction_behavior_schema_uri: Bucket URI to the schema for the model inference behavior
-        :param pulumi.Input[_builtins.str] service_account: Service account for the deployment
-        :param pulumi.Input[_builtins.int] traffic_percent: Traffic percentage for this deployment
         """
-        pulumi.set(__self__, "endpoint_id", endpoint_id)
         pulumi.set(__self__, "model_artifacts_bucket_uri", model_artifacts_bucket_uri)
         pulumi.set(__self__, "model_image_url", model_image_url)
         pulumi.set(__self__, "model_prediction_input_schema_uri", model_prediction_input_schema_uri)
         pulumi.set(__self__, "model_prediction_output_schema_uri", model_prediction_output_schema_uri)
         pulumi.set(__self__, "project_id", project_id)
         pulumi.set(__self__, "region", region)
+        pulumi.set(__self__, "service_account", service_account)
+        if endpoint_model_deployment is not None:
+            pulumi.set(__self__, "endpoint_model_deployment", endpoint_model_deployment)
         if labels is not None:
             pulumi.set(__self__, "labels", labels)
-        if machine_type is None:
-            machine_type = 'n1-standard-2'
-        if machine_type is not None:
-            pulumi.set(__self__, "machine_type", machine_type)
-        if max_replicas is None:
-            max_replicas = 3
-        if max_replicas is not None:
-            pulumi.set(__self__, "max_replicas", max_replicas)
-        if min_replicas is None:
-            min_replicas = 1
-        if min_replicas is not None:
-            pulumi.set(__self__, "min_replicas", min_replicas)
         if model_prediction_behavior_schema_uri is not None:
             pulumi.set(__self__, "model_prediction_behavior_schema_uri", model_prediction_behavior_schema_uri)
-        if service_account is not None:
-            pulumi.set(__self__, "service_account", service_account)
-        if traffic_percent is None:
-            traffic_percent = 100
-        if traffic_percent is not None:
-            pulumi.set(__self__, "traffic_percent", traffic_percent)
-
-    @_builtins.property
-    @pulumi.getter(name="endpointId")
-    def endpoint_id(self) -> pulumi.Input[_builtins.str]:
-        """
-        Vertex AI Endpoint ID
-        """
-        return pulumi.get(self, "endpoint_id")
-
-    @endpoint_id.setter
-    def endpoint_id(self, value: pulumi.Input[_builtins.str]):
-        pulumi.set(self, "endpoint_id", value)
 
     @_builtins.property
     @pulumi.getter(name="modelArtifactsBucketUri")
@@ -165,6 +131,30 @@ class VertexModelDeploymentArgs:
         pulumi.set(self, "region", value)
 
     @_builtins.property
+    @pulumi.getter(name="serviceAccount")
+    def service_account(self) -> pulumi.Input[_builtins.str]:
+        """
+        Service account for the model. If ModelImage is pointing to a private registry, this service account must have read access to the registry.
+        """
+        return pulumi.get(self, "service_account")
+
+    @service_account.setter
+    def service_account(self, value: pulumi.Input[_builtins.str]):
+        pulumi.set(self, "service_account", value)
+
+    @_builtins.property
+    @pulumi.getter(name="endpointModelDeployment")
+    def endpoint_model_deployment(self) -> Optional[pulumi.Input['EndpointModelDeploymentArgsArgs']]:
+        """
+        Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
+        """
+        return pulumi.get(self, "endpoint_model_deployment")
+
+    @endpoint_model_deployment.setter
+    def endpoint_model_deployment(self, value: Optional[pulumi.Input['EndpointModelDeploymentArgsArgs']]):
+        pulumi.set(self, "endpoint_model_deployment", value)
+
+    @_builtins.property
     @pulumi.getter
     def labels(self) -> Optional[pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]]]:
         """
@@ -175,42 +165,6 @@ class VertexModelDeploymentArgs:
     @labels.setter
     def labels(self, value: Optional[pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]]]):
         pulumi.set(self, "labels", value)
-
-    @_builtins.property
-    @pulumi.getter(name="machineType")
-    def machine_type(self) -> Optional[pulumi.Input[_builtins.str]]:
-        """
-        Machine type for deployment
-        """
-        return pulumi.get(self, "machine_type")
-
-    @machine_type.setter
-    def machine_type(self, value: Optional[pulumi.Input[_builtins.str]]):
-        pulumi.set(self, "machine_type", value)
-
-    @_builtins.property
-    @pulumi.getter(name="maxReplicas")
-    def max_replicas(self) -> Optional[pulumi.Input[_builtins.int]]:
-        """
-        Maximum number of replicas
-        """
-        return pulumi.get(self, "max_replicas")
-
-    @max_replicas.setter
-    def max_replicas(self, value: Optional[pulumi.Input[_builtins.int]]):
-        pulumi.set(self, "max_replicas", value)
-
-    @_builtins.property
-    @pulumi.getter(name="minReplicas")
-    def min_replicas(self) -> Optional[pulumi.Input[_builtins.int]]:
-        """
-        Minimum number of replicas
-        """
-        return pulumi.get(self, "min_replicas")
-
-    @min_replicas.setter
-    def min_replicas(self, value: Optional[pulumi.Input[_builtins.int]]):
-        pulumi.set(self, "min_replicas", value)
 
     @_builtins.property
     @pulumi.getter(name="modelPredictionBehaviorSchemaUri")
@@ -224,30 +178,6 @@ class VertexModelDeploymentArgs:
     def model_prediction_behavior_schema_uri(self, value: Optional[pulumi.Input[_builtins.str]]):
         pulumi.set(self, "model_prediction_behavior_schema_uri", value)
 
-    @_builtins.property
-    @pulumi.getter(name="serviceAccount")
-    def service_account(self) -> Optional[pulumi.Input[_builtins.str]]:
-        """
-        Service account for the deployment
-        """
-        return pulumi.get(self, "service_account")
-
-    @service_account.setter
-    def service_account(self, value: Optional[pulumi.Input[_builtins.str]]):
-        pulumi.set(self, "service_account", value)
-
-    @_builtins.property
-    @pulumi.getter(name="trafficPercent")
-    def traffic_percent(self) -> Optional[pulumi.Input[_builtins.int]]:
-        """
-        Traffic percentage for this deployment
-        """
-        return pulumi.get(self, "traffic_percent")
-
-    @traffic_percent.setter
-    def traffic_percent(self, value: Optional[pulumi.Input[_builtins.int]]):
-        pulumi.set(self, "traffic_percent", value)
-
 
 @pulumi.type_token("gcp-vertex-model-deployment:resources:VertexModelDeployment")
 class VertexModelDeployment(pulumi.CustomResource):
@@ -255,11 +185,8 @@ class VertexModelDeployment(pulumi.CustomResource):
     def __init__(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
-                 endpoint_id: Optional[pulumi.Input[_builtins.str]] = None,
+                 endpoint_model_deployment: Optional[pulumi.Input[Union['EndpointModelDeploymentArgsArgs', 'EndpointModelDeploymentArgsArgsDict']]] = None,
                  labels: Optional[pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]]] = None,
-                 machine_type: Optional[pulumi.Input[_builtins.str]] = None,
-                 max_replicas: Optional[pulumi.Input[_builtins.int]] = None,
-                 min_replicas: Optional[pulumi.Input[_builtins.int]] = None,
                  model_artifacts_bucket_uri: Optional[pulumi.Input[_builtins.str]] = None,
                  model_image_url: Optional[pulumi.Input[_builtins.str]] = None,
                  model_prediction_behavior_schema_uri: Optional[pulumi.Input[_builtins.str]] = None,
@@ -268,18 +195,14 @@ class VertexModelDeployment(pulumi.CustomResource):
                  project_id: Optional[pulumi.Input[_builtins.str]] = None,
                  region: Optional[pulumi.Input[_builtins.str]] = None,
                  service_account: Optional[pulumi.Input[_builtins.str]] = None,
-                 traffic_percent: Optional[pulumi.Input[_builtins.int]] = None,
                  __props__=None):
         """
         Deploys a model to a Vertex AI endpoint
 
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
-        :param pulumi.Input[_builtins.str] endpoint_id: Vertex AI Endpoint ID
+        :param pulumi.Input[Union['EndpointModelDeploymentArgsArgs', 'EndpointModelDeploymentArgsArgsDict']] endpoint_model_deployment: Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
         :param pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]] labels: Labels for the deployment
-        :param pulumi.Input[_builtins.str] machine_type: Machine type for deployment
-        :param pulumi.Input[_builtins.int] max_replicas: Maximum number of replicas
-        :param pulumi.Input[_builtins.int] min_replicas: Minimum number of replicas
         :param pulumi.Input[_builtins.str] model_artifacts_bucket_uri: Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
         :param pulumi.Input[_builtins.str] model_image_url: Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers
         :param pulumi.Input[_builtins.str] model_prediction_behavior_schema_uri: Bucket URI to the schema for the model inference behavior
@@ -287,8 +210,7 @@ class VertexModelDeployment(pulumi.CustomResource):
         :param pulumi.Input[_builtins.str] model_prediction_output_schema_uri: Bucket URI to the schema for the model output
         :param pulumi.Input[_builtins.str] project_id: Google Cloud Project ID
         :param pulumi.Input[_builtins.str] region: Google Cloud region
-        :param pulumi.Input[_builtins.str] service_account: Service account for the deployment
-        :param pulumi.Input[_builtins.int] traffic_percent: Traffic percentage for this deployment
+        :param pulumi.Input[_builtins.str] service_account: Service account for the model. If ModelImage is pointing to a private registry, this service account must have read access to the registry.
         """
         ...
     @overload
@@ -314,11 +236,8 @@ class VertexModelDeployment(pulumi.CustomResource):
     def _internal_init(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
-                 endpoint_id: Optional[pulumi.Input[_builtins.str]] = None,
+                 endpoint_model_deployment: Optional[pulumi.Input[Union['EndpointModelDeploymentArgsArgs', 'EndpointModelDeploymentArgsArgsDict']]] = None,
                  labels: Optional[pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]]] = None,
-                 machine_type: Optional[pulumi.Input[_builtins.str]] = None,
-                 max_replicas: Optional[pulumi.Input[_builtins.int]] = None,
-                 min_replicas: Optional[pulumi.Input[_builtins.int]] = None,
                  model_artifacts_bucket_uri: Optional[pulumi.Input[_builtins.str]] = None,
                  model_image_url: Optional[pulumi.Input[_builtins.str]] = None,
                  model_prediction_behavior_schema_uri: Optional[pulumi.Input[_builtins.str]] = None,
@@ -327,7 +246,6 @@ class VertexModelDeployment(pulumi.CustomResource):
                  project_id: Optional[pulumi.Input[_builtins.str]] = None,
                  region: Optional[pulumi.Input[_builtins.str]] = None,
                  service_account: Optional[pulumi.Input[_builtins.str]] = None,
-                 traffic_percent: Optional[pulumi.Input[_builtins.int]] = None,
                  __props__=None):
         opts = pulumi.ResourceOptions.merge(_utilities.get_resource_opts_defaults(), opts)
         if not isinstance(opts, pulumi.ResourceOptions):
@@ -337,19 +255,8 @@ class VertexModelDeployment(pulumi.CustomResource):
                 raise TypeError('__props__ is only valid when passed in combination with a valid opts.id to get an existing resource')
             __props__ = VertexModelDeploymentArgs.__new__(VertexModelDeploymentArgs)
 
-            if endpoint_id is None and not opts.urn:
-                raise TypeError("Missing required property 'endpoint_id'")
-            __props__.__dict__["endpoint_id"] = endpoint_id
+            __props__.__dict__["endpoint_model_deployment"] = endpoint_model_deployment
             __props__.__dict__["labels"] = labels
-            if machine_type is None:
-                machine_type = 'n1-standard-2'
-            __props__.__dict__["machine_type"] = machine_type
-            if max_replicas is None:
-                max_replicas = 3
-            __props__.__dict__["max_replicas"] = max_replicas
-            if min_replicas is None:
-                min_replicas = 1
-            __props__.__dict__["min_replicas"] = min_replicas
             if model_artifacts_bucket_uri is None and not opts.urn:
                 raise TypeError("Missing required property 'model_artifacts_bucket_uri'")
             __props__.__dict__["model_artifacts_bucket_uri"] = model_artifacts_bucket_uri
@@ -369,10 +276,9 @@ class VertexModelDeployment(pulumi.CustomResource):
             if region is None and not opts.urn:
                 raise TypeError("Missing required property 'region'")
             __props__.__dict__["region"] = region
+            if service_account is None and not opts.urn:
+                raise TypeError("Missing required property 'service_account'")
             __props__.__dict__["service_account"] = service_account
-            if traffic_percent is None:
-                traffic_percent = 100
-            __props__.__dict__["traffic_percent"] = traffic_percent
             __props__.__dict__["create_time"] = None
             __props__.__dict__["deployed_model_id"] = None
             __props__.__dict__["endpoint_name"] = None
@@ -401,12 +307,9 @@ class VertexModelDeployment(pulumi.CustomResource):
 
         __props__.__dict__["create_time"] = None
         __props__.__dict__["deployed_model_id"] = None
-        __props__.__dict__["endpoint_id"] = None
+        __props__.__dict__["endpoint_model_deployment"] = None
         __props__.__dict__["endpoint_name"] = None
         __props__.__dict__["labels"] = None
-        __props__.__dict__["machine_type"] = None
-        __props__.__dict__["max_replicas"] = None
-        __props__.__dict__["min_replicas"] = None
         __props__.__dict__["model_artifacts_bucket_uri"] = None
         __props__.__dict__["model_image_url"] = None
         __props__.__dict__["model_name"] = None
@@ -416,7 +319,6 @@ class VertexModelDeployment(pulumi.CustomResource):
         __props__.__dict__["project_id"] = None
         __props__.__dict__["region"] = None
         __props__.__dict__["service_account"] = None
-        __props__.__dict__["traffic_percent"] = None
         return VertexModelDeployment(resource_name, opts=opts, __props__=__props__)
 
     @_builtins.property
@@ -436,12 +338,12 @@ class VertexModelDeployment(pulumi.CustomResource):
         return pulumi.get(self, "deployed_model_id")
 
     @_builtins.property
-    @pulumi.getter(name="endpointId")
-    def endpoint_id(self) -> pulumi.Output[_builtins.str]:
+    @pulumi.getter(name="endpointModelDeployment")
+    def endpoint_model_deployment(self) -> pulumi.Output[Optional['outputs.EndpointModelDeploymentArgs']]:
         """
-        Vertex AI Endpoint ID
+        Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
         """
-        return pulumi.get(self, "endpoint_id")
+        return pulumi.get(self, "endpoint_model_deployment")
 
     @_builtins.property
     @pulumi.getter(name="endpointName")
@@ -458,30 +360,6 @@ class VertexModelDeployment(pulumi.CustomResource):
         Labels for the deployment
         """
         return pulumi.get(self, "labels")
-
-    @_builtins.property
-    @pulumi.getter(name="machineType")
-    def machine_type(self) -> pulumi.Output[Optional[_builtins.str]]:
-        """
-        Machine type for deployment
-        """
-        return pulumi.get(self, "machine_type")
-
-    @_builtins.property
-    @pulumi.getter(name="maxReplicas")
-    def max_replicas(self) -> pulumi.Output[Optional[_builtins.int]]:
-        """
-        Maximum number of replicas
-        """
-        return pulumi.get(self, "max_replicas")
-
-    @_builtins.property
-    @pulumi.getter(name="minReplicas")
-    def min_replicas(self) -> pulumi.Output[Optional[_builtins.int]]:
-        """
-        Minimum number of replicas
-        """
-        return pulumi.get(self, "min_replicas")
 
     @_builtins.property
     @pulumi.getter(name="modelArtifactsBucketUri")
@@ -546,17 +424,9 @@ class VertexModelDeployment(pulumi.CustomResource):
 
     @_builtins.property
     @pulumi.getter(name="serviceAccount")
-    def service_account(self) -> pulumi.Output[Optional[_builtins.str]]:
+    def service_account(self) -> pulumi.Output[_builtins.str]:
         """
-        Service account for the deployment
+        Service account for the model. If ModelImage is pointing to a private registry, this service account must have read access to the registry.
         """
         return pulumi.get(self, "service_account")
-
-    @_builtins.property
-    @pulumi.getter(name="trafficPercent")
-    def traffic_percent(self) -> pulumi.Output[Optional[_builtins.int]]:
-        """
-        Traffic percentage for this deployment
-        """
-        return pulumi.get(self, "traffic_percent")
 

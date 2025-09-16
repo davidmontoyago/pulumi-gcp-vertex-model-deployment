@@ -48,7 +48,7 @@ func TestVertexModelDeploymentCreate_ModelUploadAndDeployRequests(t *testing.T) 
 			ModelPredictionInputSchemaURI:    modelPredictionInputSchemaURI,
 			ModelPredictionOutputSchemaURI:   modelPredictionOutputSchemaURI,
 			ModelPredictionBehaviorSchemaURI: modelPredictionBehaviorSchemaURI,
-			EndpointModelDeployment: EndpointModelDeploymentArgs{
+			EndpointModelDeployment: &EndpointModelDeploymentArgs{
 				EndpointID:     endpointID,
 				MachineType:    machineType,
 				MinReplicas:    minReplicas,

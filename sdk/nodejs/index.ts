@@ -13,9 +13,11 @@ utilities.lazyLoad(exports, ["Provider"], () => require("./provider"));
 
 // Export sub-modules:
 import * as resources from "./resources";
+import * as types from "./types";
 
 export {
     resources,
+    types,
 };
 pulumi.runtime.registerResourcePackage("gcp-vertex-model-deployment", {
     version: utilities.getVersion(),

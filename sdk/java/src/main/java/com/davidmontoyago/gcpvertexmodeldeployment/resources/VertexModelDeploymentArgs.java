@@ -3,11 +3,10 @@
 
 package com.davidmontoyago.gcpvertexmodeldeployment.resources;
 
+import com.davidmontoyago.gcpvertexmodeldeployment.resources.inputs.EndpointModelDeploymentArgsArgs;
 import com.pulumi.core.Output;
 import com.pulumi.core.annotations.Import;
-import com.pulumi.core.internal.Codegen;
 import com.pulumi.exceptions.MissingRequiredPropertyException;
-import java.lang.Integer;
 import java.lang.String;
 import java.util.Map;
 import java.util.Objects;
@@ -20,18 +19,18 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
     public static final VertexModelDeploymentArgs Empty = new VertexModelDeploymentArgs();
 
     /**
-     * Vertex AI Endpoint ID
+     * Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
      * 
      */
-    @Import(name="endpointId", required=true)
-    private Output<String> endpointId;
+    @Import(name="endpointModelDeployment")
+    private @Nullable Output<EndpointModelDeploymentArgsArgs> endpointModelDeployment;
 
     /**
-     * @return Vertex AI Endpoint ID
+     * @return Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
      * 
      */
-    public Output<String> endpointId() {
-        return this.endpointId;
+    public Optional<Output<EndpointModelDeploymentArgsArgs>> endpointModelDeployment() {
+        return Optional.ofNullable(this.endpointModelDeployment);
     }
 
     /**
@@ -47,51 +46,6 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
      */
     public Optional<Output<Map<String,String>>> labels() {
         return Optional.ofNullable(this.labels);
-    }
-
-    /**
-     * Machine type for deployment
-     * 
-     */
-    @Import(name="machineType")
-    private @Nullable Output<String> machineType;
-
-    /**
-     * @return Machine type for deployment
-     * 
-     */
-    public Optional<Output<String>> machineType() {
-        return Optional.ofNullable(this.machineType);
-    }
-
-    /**
-     * Maximum number of replicas
-     * 
-     */
-    @Import(name="maxReplicas")
-    private @Nullable Output<Integer> maxReplicas;
-
-    /**
-     * @return Maximum number of replicas
-     * 
-     */
-    public Optional<Output<Integer>> maxReplicas() {
-        return Optional.ofNullable(this.maxReplicas);
-    }
-
-    /**
-     * Minimum number of replicas
-     * 
-     */
-    @Import(name="minReplicas")
-    private @Nullable Output<Integer> minReplicas;
-
-    /**
-     * @return Minimum number of replicas
-     * 
-     */
-    public Optional<Output<Integer>> minReplicas() {
-        return Optional.ofNullable(this.minReplicas);
     }
 
     /**
@@ -200,43 +154,25 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
     }
 
     /**
-     * Service account for the deployment
+     * Service account for the model. If ModelImage is pointing to a private registry, this service account must have read access to the registry.
      * 
      */
-    @Import(name="serviceAccount")
-    private @Nullable Output<String> serviceAccount;
+    @Import(name="serviceAccount", required=true)
+    private Output<String> serviceAccount;
 
     /**
-     * @return Service account for the deployment
+     * @return Service account for the model. If ModelImage is pointing to a private registry, this service account must have read access to the registry.
      * 
      */
-    public Optional<Output<String>> serviceAccount() {
-        return Optional.ofNullable(this.serviceAccount);
-    }
-
-    /**
-     * Traffic percentage for this deployment
-     * 
-     */
-    @Import(name="trafficPercent")
-    private @Nullable Output<Integer> trafficPercent;
-
-    /**
-     * @return Traffic percentage for this deployment
-     * 
-     */
-    public Optional<Output<Integer>> trafficPercent() {
-        return Optional.ofNullable(this.trafficPercent);
+    public Output<String> serviceAccount() {
+        return this.serviceAccount;
     }
 
     private VertexModelDeploymentArgs() {}
 
     private VertexModelDeploymentArgs(VertexModelDeploymentArgs $) {
-        this.endpointId = $.endpointId;
+        this.endpointModelDeployment = $.endpointModelDeployment;
         this.labels = $.labels;
-        this.machineType = $.machineType;
-        this.maxReplicas = $.maxReplicas;
-        this.minReplicas = $.minReplicas;
         this.modelArtifactsBucketUri = $.modelArtifactsBucketUri;
         this.modelImageUrl = $.modelImageUrl;
         this.modelPredictionBehaviorSchemaUri = $.modelPredictionBehaviorSchemaUri;
@@ -245,7 +181,6 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
         this.projectId = $.projectId;
         this.region = $.region;
         this.serviceAccount = $.serviceAccount;
-        this.trafficPercent = $.trafficPercent;
     }
 
     public static Builder builder() {
@@ -267,24 +202,24 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
         }
 
         /**
-         * @param endpointId Vertex AI Endpoint ID
+         * @param endpointModelDeployment Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
          * 
          * @return builder
          * 
          */
-        public Builder endpointId(Output<String> endpointId) {
-            $.endpointId = endpointId;
+        public Builder endpointModelDeployment(@Nullable Output<EndpointModelDeploymentArgsArgs> endpointModelDeployment) {
+            $.endpointModelDeployment = endpointModelDeployment;
             return this;
         }
 
         /**
-         * @param endpointId Vertex AI Endpoint ID
+         * @param endpointModelDeployment Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
          * 
          * @return builder
          * 
          */
-        public Builder endpointId(String endpointId) {
-            return endpointId(Output.of(endpointId));
+        public Builder endpointModelDeployment(EndpointModelDeploymentArgsArgs endpointModelDeployment) {
+            return endpointModelDeployment(Output.of(endpointModelDeployment));
         }
 
         /**
@@ -306,69 +241,6 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
          */
         public Builder labels(Map<String,String> labels) {
             return labels(Output.of(labels));
-        }
-
-        /**
-         * @param machineType Machine type for deployment
-         * 
-         * @return builder
-         * 
-         */
-        public Builder machineType(@Nullable Output<String> machineType) {
-            $.machineType = machineType;
-            return this;
-        }
-
-        /**
-         * @param machineType Machine type for deployment
-         * 
-         * @return builder
-         * 
-         */
-        public Builder machineType(String machineType) {
-            return machineType(Output.of(machineType));
-        }
-
-        /**
-         * @param maxReplicas Maximum number of replicas
-         * 
-         * @return builder
-         * 
-         */
-        public Builder maxReplicas(@Nullable Output<Integer> maxReplicas) {
-            $.maxReplicas = maxReplicas;
-            return this;
-        }
-
-        /**
-         * @param maxReplicas Maximum number of replicas
-         * 
-         * @return builder
-         * 
-         */
-        public Builder maxReplicas(Integer maxReplicas) {
-            return maxReplicas(Output.of(maxReplicas));
-        }
-
-        /**
-         * @param minReplicas Minimum number of replicas
-         * 
-         * @return builder
-         * 
-         */
-        public Builder minReplicas(@Nullable Output<Integer> minReplicas) {
-            $.minReplicas = minReplicas;
-            return this;
-        }
-
-        /**
-         * @param minReplicas Minimum number of replicas
-         * 
-         * @return builder
-         * 
-         */
-        public Builder minReplicas(Integer minReplicas) {
-            return minReplicas(Output.of(minReplicas));
         }
 
         /**
@@ -519,18 +391,18 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
         }
 
         /**
-         * @param serviceAccount Service account for the deployment
+         * @param serviceAccount Service account for the model. If ModelImage is pointing to a private registry, this service account must have read access to the registry.
          * 
          * @return builder
          * 
          */
-        public Builder serviceAccount(@Nullable Output<String> serviceAccount) {
+        public Builder serviceAccount(Output<String> serviceAccount) {
             $.serviceAccount = serviceAccount;
             return this;
         }
 
         /**
-         * @param serviceAccount Service account for the deployment
+         * @param serviceAccount Service account for the model. If ModelImage is pointing to a private registry, this service account must have read access to the registry.
          * 
          * @return builder
          * 
@@ -539,34 +411,7 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
             return serviceAccount(Output.of(serviceAccount));
         }
 
-        /**
-         * @param trafficPercent Traffic percentage for this deployment
-         * 
-         * @return builder
-         * 
-         */
-        public Builder trafficPercent(@Nullable Output<Integer> trafficPercent) {
-            $.trafficPercent = trafficPercent;
-            return this;
-        }
-
-        /**
-         * @param trafficPercent Traffic percentage for this deployment
-         * 
-         * @return builder
-         * 
-         */
-        public Builder trafficPercent(Integer trafficPercent) {
-            return trafficPercent(Output.of(trafficPercent));
-        }
-
         public VertexModelDeploymentArgs build() {
-            if ($.endpointId == null) {
-                throw new MissingRequiredPropertyException("VertexModelDeploymentArgs", "endpointId");
-            }
-            $.machineType = Codegen.stringProp("machineType").output().arg($.machineType).def("n1-standard-2").getNullable();
-            $.maxReplicas = Codegen.integerProp("maxReplicas").output().arg($.maxReplicas).def(3).getNullable();
-            $.minReplicas = Codegen.integerProp("minReplicas").output().arg($.minReplicas).def(1).getNullable();
             if ($.modelArtifactsBucketUri == null) {
                 throw new MissingRequiredPropertyException("VertexModelDeploymentArgs", "modelArtifactsBucketUri");
             }
@@ -585,7 +430,9 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
             if ($.region == null) {
                 throw new MissingRequiredPropertyException("VertexModelDeploymentArgs", "region");
             }
-            $.trafficPercent = Codegen.integerProp("trafficPercent").output().arg($.trafficPercent).def(100).getNullable();
+            if ($.serviceAccount == null) {
+                throw new MissingRequiredPropertyException("VertexModelDeploymentArgs", "serviceAccount");
+            }
             return $;
         }
     }

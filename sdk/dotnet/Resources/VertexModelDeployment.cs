@@ -29,10 +29,10 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources
         public Output<string> DeployedModelId { get; private set; } = null!;
 
         /// <summary>
-        /// Vertex AI Endpoint ID
+        /// Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
         /// </summary>
-        [Output("endpointId")]
-        public Output<string> EndpointId { get; private set; } = null!;
+        [Output("endpointModelDeployment")]
+        public Output<Outputs.EndpointModelDeploymentArgs?> EndpointModelDeployment { get; private set; } = null!;
 
         /// <summary>
         /// Full name of the endpoint
@@ -45,24 +45,6 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources
         /// </summary>
         [Output("labels")]
         public Output<ImmutableDictionary<string, string>?> Labels { get; private set; } = null!;
-
-        /// <summary>
-        /// Machine type for deployment
-        /// </summary>
-        [Output("machineType")]
-        public Output<string?> MachineType { get; private set; } = null!;
-
-        /// <summary>
-        /// Maximum number of replicas
-        /// </summary>
-        [Output("maxReplicas")]
-        public Output<int?> MaxReplicas { get; private set; } = null!;
-
-        /// <summary>
-        /// Minimum number of replicas
-        /// </summary>
-        [Output("minReplicas")]
-        public Output<int?> MinReplicas { get; private set; } = null!;
 
         /// <summary>
         /// Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
@@ -110,16 +92,10 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources
         public Output<string> Region { get; private set; } = null!;
 
         /// <summary>
-        /// Service account for the deployment
+        /// Service account for the model. If ModelImage is pointing to a private registry, this service account must have read access to the registry.
         /// </summary>
         [Output("serviceAccount")]
-        public Output<string?> ServiceAccount { get; private set; } = null!;
-
-        /// <summary>
-        /// Traffic percentage for this deployment
-        /// </summary>
-        [Output("trafficPercent")]
-        public Output<int?> TrafficPercent { get; private set; } = null!;
+        public Output<string> ServiceAccount { get; private set; } = null!;
 
 
         /// <summary>
@@ -168,10 +144,10 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources
     public sealed class VertexModelDeploymentArgs : global::Pulumi.ResourceArgs
     {
         /// <summary>
-        /// Vertex AI Endpoint ID
+        /// Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
         /// </summary>
-        [Input("endpointId", required: true)]
-        public Input<string> EndpointId { get; set; } = null!;
+        [Input("endpointModelDeployment")]
+        public Input<Inputs.EndpointModelDeploymentArgsArgs>? EndpointModelDeployment { get; set; }
 
         [Input("labels")]
         private InputMap<string>? _labels;
@@ -184,24 +160,6 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources
             get => _labels ?? (_labels = new InputMap<string>());
             set => _labels = value;
         }
-
-        /// <summary>
-        /// Machine type for deployment
-        /// </summary>
-        [Input("machineType")]
-        public Input<string>? MachineType { get; set; }
-
-        /// <summary>
-        /// Maximum number of replicas
-        /// </summary>
-        [Input("maxReplicas")]
-        public Input<int>? MaxReplicas { get; set; }
-
-        /// <summary>
-        /// Minimum number of replicas
-        /// </summary>
-        [Input("minReplicas")]
-        public Input<int>? MinReplicas { get; set; }
 
         /// <summary>
         /// Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
@@ -246,23 +204,13 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources
         public Input<string> Region { get; set; } = null!;
 
         /// <summary>
-        /// Service account for the deployment
+        /// Service account for the model. If ModelImage is pointing to a private registry, this service account must have read access to the registry.
         /// </summary>
-        [Input("serviceAccount")]
-        public Input<string>? ServiceAccount { get; set; }
-
-        /// <summary>
-        /// Traffic percentage for this deployment
-        /// </summary>
-        [Input("trafficPercent")]
-        public Input<int>? TrafficPercent { get; set; }
+        [Input("serviceAccount", required: true)]
+        public Input<string> ServiceAccount { get; set; } = null!;
 
         public VertexModelDeploymentArgs()
         {
-            MachineType = "n1-standard-2";
-            MaxReplicas = 3;
-            MinReplicas = 1;
-            TrafficPercent = 100;
         }
         public static new VertexModelDeploymentArgs Empty => new VertexModelDeploymentArgs();
     }

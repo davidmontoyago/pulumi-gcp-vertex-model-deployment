@@ -20,18 +20,12 @@ type VertexModelDeployment struct {
 	CreateTime pulumi.StringOutput `pulumi:"createTime"`
 	// ID of the deployed model
 	DeployedModelId pulumi.StringOutput `pulumi:"deployedModelId"`
-	// Vertex AI Endpoint ID
-	EndpointId pulumi.StringOutput `pulumi:"endpointId"`
+	// Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
+	EndpointModelDeployment EndpointModelDeploymentArgsPtrOutput `pulumi:"endpointModelDeployment"`
 	// Full name of the endpoint
 	EndpointName pulumi.StringOutput `pulumi:"endpointName"`
 	// Labels for the deployment
 	Labels pulumi.StringMapOutput `pulumi:"labels"`
-	// Machine type for deployment
-	MachineType pulumi.StringPtrOutput `pulumi:"machineType"`
-	// Maximum number of replicas
-	MaxReplicas pulumi.IntPtrOutput `pulumi:"maxReplicas"`
-	// Minimum number of replicas
-	MinReplicas pulumi.IntPtrOutput `pulumi:"minReplicas"`
 	// Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
 	ModelArtifactsBucketUri pulumi.StringOutput `pulumi:"modelArtifactsBucketUri"`
 	// Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers
@@ -47,10 +41,8 @@ type VertexModelDeployment struct {
 	ProjectId pulumi.StringOutput `pulumi:"projectId"`
 	// Google Cloud region
 	Region pulumi.StringOutput `pulumi:"region"`
-	// Service account for the deployment
-	ServiceAccount pulumi.StringPtrOutput `pulumi:"serviceAccount"`
-	// Traffic percentage for this deployment
-	TrafficPercent pulumi.IntPtrOutput `pulumi:"trafficPercent"`
+	// Service account for the model. If ModelImage is pointing to a private registry, this service account must have read access to the registry.
+	ServiceAccount pulumi.StringOutput `pulumi:"serviceAccount"`
 }
 
 // NewVertexModelDeployment registers a new resource with the given unique name, arguments, and options.
@@ -60,9 +52,6 @@ func NewVertexModelDeployment(ctx *pulumi.Context,
 		return nil, errors.New("missing one or more required arguments")
 	}
 
-	if args.EndpointId == nil {
-		return nil, errors.New("invalid value for required argument 'EndpointId'")
-	}
 	if args.ModelArtifactsBucketUri == nil {
 		return nil, errors.New("invalid value for required argument 'ModelArtifactsBucketUri'")
 	}
@@ -81,17 +70,11 @@ func NewVertexModelDeployment(ctx *pulumi.Context,
 	if args.Region == nil {
 		return nil, errors.New("invalid value for required argument 'Region'")
 	}
-	if args.MachineType == nil {
-		args.MachineType = pulumi.StringPtr("n1-standard-2")
+	if args.ServiceAccount == nil {
+		return nil, errors.New("invalid value for required argument 'ServiceAccount'")
 	}
-	if args.MaxReplicas == nil {
-		args.MaxReplicas = pulumi.IntPtr(3)
-	}
-	if args.MinReplicas == nil {
-		args.MinReplicas = pulumi.IntPtr(1)
-	}
-	if args.TrafficPercent == nil {
-		args.TrafficPercent = pulumi.IntPtr(100)
+	if args.EndpointModelDeployment != nil {
+		args.EndpointModelDeployment = args.EndpointModelDeployment.ToEndpointModelDeploymentArgsPtrOutput().ApplyT(func(v *EndpointModelDeploymentArgs) *EndpointModelDeploymentArgs { return v.Defaults() }).(EndpointModelDeploymentArgsPtrOutput)
 	}
 	opts = internal.PkgResourceDefaultOpts(opts)
 	var resource VertexModelDeployment
@@ -126,16 +109,10 @@ func (VertexModelDeploymentState) ElementType() reflect.Type {
 }
 
 type vertexModelDeploymentArgs struct {
-	// Vertex AI Endpoint ID
-	EndpointId string `pulumi:"endpointId"`
+	// Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
+	EndpointModelDeployment *EndpointModelDeploymentArgs `pulumi:"endpointModelDeployment"`
 	// Labels for the deployment
 	Labels map[string]string `pulumi:"labels"`
-	// Machine type for deployment
-	MachineType *string `pulumi:"machineType"`
-	// Maximum number of replicas
-	MaxReplicas *int `pulumi:"maxReplicas"`
-	// Minimum number of replicas
-	MinReplicas *int `pulumi:"minReplicas"`
 	// Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
 	ModelArtifactsBucketUri string `pulumi:"modelArtifactsBucketUri"`
 	// Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers
@@ -150,24 +127,16 @@ type vertexModelDeploymentArgs struct {
 	ProjectId string `pulumi:"projectId"`
 	// Google Cloud region
 	Region string `pulumi:"region"`
-	// Service account for the deployment
-	ServiceAccount *string `pulumi:"serviceAccount"`
-	// Traffic percentage for this deployment
-	TrafficPercent *int `pulumi:"trafficPercent"`
+	// Service account for the model. If ModelImage is pointing to a private registry, this service account must have read access to the registry.
+	ServiceAccount string `pulumi:"serviceAccount"`
 }
 
 // The set of arguments for constructing a VertexModelDeployment resource.
 type VertexModelDeploymentArgs struct {
-	// Vertex AI Endpoint ID
-	EndpointId pulumi.StringInput
+	// Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
+	EndpointModelDeployment EndpointModelDeploymentArgsPtrInput
 	// Labels for the deployment
 	Labels pulumi.StringMapInput
-	// Machine type for deployment
-	MachineType pulumi.StringPtrInput
-	// Maximum number of replicas
-	MaxReplicas pulumi.IntPtrInput
-	// Minimum number of replicas
-	MinReplicas pulumi.IntPtrInput
 	// Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
 	ModelArtifactsBucketUri pulumi.StringInput
 	// Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers
@@ -182,10 +151,8 @@ type VertexModelDeploymentArgs struct {
 	ProjectId pulumi.StringInput
 	// Google Cloud region
 	Region pulumi.StringInput
-	// Service account for the deployment
-	ServiceAccount pulumi.StringPtrInput
-	// Traffic percentage for this deployment
-	TrafficPercent pulumi.IntPtrInput
+	// Service account for the model. If ModelImage is pointing to a private registry, this service account must have read access to the registry.
+	ServiceAccount pulumi.StringInput
 }
 
 func (VertexModelDeploymentArgs) ElementType() reflect.Type {
@@ -285,9 +252,9 @@ func (o VertexModelDeploymentOutput) DeployedModelId() pulumi.StringOutput {
 	return o.ApplyT(func(v *VertexModelDeployment) pulumi.StringOutput { return v.DeployedModelId }).(pulumi.StringOutput)
 }
 
-// Vertex AI Endpoint ID
-func (o VertexModelDeploymentOutput) EndpointId() pulumi.StringOutput {
-	return o.ApplyT(func(v *VertexModelDeployment) pulumi.StringOutput { return v.EndpointId }).(pulumi.StringOutput)
+// Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
+func (o VertexModelDeploymentOutput) EndpointModelDeployment() EndpointModelDeploymentArgsPtrOutput {
+	return o.ApplyT(func(v *VertexModelDeployment) EndpointModelDeploymentArgsPtrOutput { return v.EndpointModelDeployment }).(EndpointModelDeploymentArgsPtrOutput)
 }
 
 // Full name of the endpoint
@@ -298,21 +265,6 @@ func (o VertexModelDeploymentOutput) EndpointName() pulumi.StringOutput {
 // Labels for the deployment
 func (o VertexModelDeploymentOutput) Labels() pulumi.StringMapOutput {
 	return o.ApplyT(func(v *VertexModelDeployment) pulumi.StringMapOutput { return v.Labels }).(pulumi.StringMapOutput)
-}
-
-// Machine type for deployment
-func (o VertexModelDeploymentOutput) MachineType() pulumi.StringPtrOutput {
-	return o.ApplyT(func(v *VertexModelDeployment) pulumi.StringPtrOutput { return v.MachineType }).(pulumi.StringPtrOutput)
-}
-
-// Maximum number of replicas
-func (o VertexModelDeploymentOutput) MaxReplicas() pulumi.IntPtrOutput {
-	return o.ApplyT(func(v *VertexModelDeployment) pulumi.IntPtrOutput { return v.MaxReplicas }).(pulumi.IntPtrOutput)
-}
-
-// Minimum number of replicas
-func (o VertexModelDeploymentOutput) MinReplicas() pulumi.IntPtrOutput {
-	return o.ApplyT(func(v *VertexModelDeployment) pulumi.IntPtrOutput { return v.MinReplicas }).(pulumi.IntPtrOutput)
 }
 
 // Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
@@ -354,14 +306,9 @@ func (o VertexModelDeploymentOutput) Region() pulumi.StringOutput {
 	return o.ApplyT(func(v *VertexModelDeployment) pulumi.StringOutput { return v.Region }).(pulumi.StringOutput)
 }
 
-// Service account for the deployment
-func (o VertexModelDeploymentOutput) ServiceAccount() pulumi.StringPtrOutput {
-	return o.ApplyT(func(v *VertexModelDeployment) pulumi.StringPtrOutput { return v.ServiceAccount }).(pulumi.StringPtrOutput)
-}
-
-// Traffic percentage for this deployment
-func (o VertexModelDeploymentOutput) TrafficPercent() pulumi.IntPtrOutput {
-	return o.ApplyT(func(v *VertexModelDeployment) pulumi.IntPtrOutput { return v.TrafficPercent }).(pulumi.IntPtrOutput)
+// Service account for the model. If ModelImage is pointing to a private registry, this service account must have read access to the registry.
+func (o VertexModelDeploymentOutput) ServiceAccount() pulumi.StringOutput {
+	return o.ApplyT(func(v *VertexModelDeployment) pulumi.StringOutput { return v.ServiceAccount }).(pulumi.StringOutput)
 }
 
 type VertexModelDeploymentArrayOutput struct{ *pulumi.OutputState }

@@ -9,17 +9,27 @@ Upload and deploy a model from a Docker image to a Vertex endpoint:
 ```go
 modelArtifactsURI := pulumi.Sprintf("gs://%s/models/my-model", myArtifactsBucket.Name)
 modelImageURL := "us-docker.pkg.dev/vertex-ai/prediction/tf2-cpu.2-15:latest"
+inputSchemaURI := pulumi.Sprintf("gs://%s/schemas/input_schema.yaml", myArtifactsBucket.Name)
+outputSchemaURI := pulumi.Sprintf("gs://%s/schemas/output_schema.yaml", myArtifactsBucket.Name)
 
 _, err = vertexmodeldeployment.NewVertexModelDeployment(ctx, "vertex-model-deployment", &vertexmodeldeployment.VertexModelDeploymentArgs{
-  ProjectId:               pulumi.String(v.Project),
-  Region:                  pulumi.String(v.Region),
-  EndpointId:              endpoint.Name,
-  ModelArtifactsBucketUri: modelArtifactsURI,
-  ModelImageUrl:           modelImageURL,
-  MachineType:             v.MachineType,
-  MinReplicas:             v.MinReplicaCount,
-  MaxReplicas:             v.MaxReplicaCount,
-  ServiceAccount:          modelServiceAccount.Email,
+  ProjectId:                        pulumi.String(v.Project),
+  Region:                          pulumi.String(v.Region),
+  ModelArtifactsBucketUri:         modelArtifactsURI,
+  ModelImageUrl:                   pulumi.String(modelImageURL),
+  ModelPredictionInputSchemaUri:   inputSchemaURI,
+  ModelPredictionOutputSchemaUri:  outputSchemaURI,
+  ServiceAccount:                  modelServiceAccount.Email,
+
+  // Optional deployment to an Endpoint. Not required for Batched
+  // prediction jobs.
+  EndpointModelDeployment: &vertexmodeldeployment.EndpointModelDeploymentArgs{
+    EndpointId:     endpoint.Name,
+    MachineType:    pulumi.String("n1-standard-2"),
+    MinReplicas:    pulumi.Int(1),
+    MaxReplicas:    pulumi.Int(3),
+    TrafficPercent: pulumi.Int(100),
+  },
 }, pulumi.Parent(v))
 if err != nil {
   return fmt.Errorf("failed to deploy model /o\\: %w", err)

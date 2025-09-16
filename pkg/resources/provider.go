@@ -115,7 +115,7 @@ func (v VertexModelDeployment) Create(
 		}()
 
 		// Deploy the model to the endpoint
-		endpointConfig := convertEndpointDeploymentArgs(req.Inputs.EndpointModelDeployment)
+		endpointConfig := toEndpointDeploymentConfig(req.Inputs.EndpointModelDeployment)
 		deployedModelID, err := deployer.Deploy(
 			ctx,
 			modelName,
@@ -273,8 +273,8 @@ func (v VertexModelDeployment) getEndpointClientFactory() services.EndpointClien
 	return testFactoryRegistry.endpointClientFactory
 }
 
-// convertEndpointDeploymentArgs converts EndpointModelDeploymentArgs to services.EndpointModelDeploymentConfig
-func convertEndpointDeploymentArgs(args EndpointModelDeploymentArgs) services.EndpointModelDeploymentConfig {
+// toEndpointDeploymentConfig converts EndpointModelDeploymentArgs to services.EndpointModelDeploymentConfig
+func toEndpointDeploymentConfig(args *EndpointModelDeploymentArgs) services.EndpointModelDeploymentConfig {
 	return services.EndpointModelDeploymentConfig{
 		EndpointID:     args.EndpointID,
 		MachineType:    args.MachineType,
@@ -286,5 +286,5 @@ func convertEndpointDeploymentArgs(args EndpointModelDeploymentArgs) services.En
 
 // isEndpointDeploymentEnabled checks if endpoint deployment is configured
 func isEndpointDeploymentEnabled(args VertexModelDeploymentArgs) bool {
-	return args.EndpointModelDeployment.EndpointID != ""
+	return args.EndpointModelDeployment != nil && args.EndpointModelDeployment.EndpointID != ""
 }

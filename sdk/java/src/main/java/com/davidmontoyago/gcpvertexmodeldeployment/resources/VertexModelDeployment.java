@@ -5,11 +5,11 @@ package com.davidmontoyago.gcpvertexmodeldeployment.resources;
 
 import com.davidmontoyago.gcpvertexmodeldeployment.Utilities;
 import com.davidmontoyago.gcpvertexmodeldeployment.resources.VertexModelDeploymentArgs;
+import com.davidmontoyago.gcpvertexmodeldeployment.resources.outputs.EndpointModelDeploymentArgs;
 import com.pulumi.core.Output;
 import com.pulumi.core.annotations.Export;
 import com.pulumi.core.annotations.ResourceType;
 import com.pulumi.core.internal.Codegen;
-import java.lang.Integer;
 import java.lang.String;
 import java.util.Map;
 import java.util.Optional;
@@ -50,18 +50,18 @@ public class VertexModelDeployment extends com.pulumi.resources.CustomResource {
         return this.deployedModelId;
     }
     /**
-     * Vertex AI Endpoint ID
+     * Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
      * 
      */
-    @Export(name="endpointId", refs={String.class}, tree="[0]")
-    private Output<String> endpointId;
+    @Export(name="endpointModelDeployment", refs={EndpointModelDeploymentArgs.class}, tree="[0]")
+    private Output</* @Nullable */ EndpointModelDeploymentArgs> endpointModelDeployment;
 
     /**
-     * @return Vertex AI Endpoint ID
+     * @return Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
      * 
      */
-    public Output<String> endpointId() {
-        return this.endpointId;
+    public Output<Optional<EndpointModelDeploymentArgs>> endpointModelDeployment() {
+        return Codegen.optional(this.endpointModelDeployment);
     }
     /**
      * Full name of the endpoint
@@ -90,48 +90,6 @@ public class VertexModelDeployment extends com.pulumi.resources.CustomResource {
      */
     public Output<Optional<Map<String,String>>> labels() {
         return Codegen.optional(this.labels);
-    }
-    /**
-     * Machine type for deployment
-     * 
-     */
-    @Export(name="machineType", refs={String.class}, tree="[0]")
-    private Output</* @Nullable */ String> machineType;
-
-    /**
-     * @return Machine type for deployment
-     * 
-     */
-    public Output<Optional<String>> machineType() {
-        return Codegen.optional(this.machineType);
-    }
-    /**
-     * Maximum number of replicas
-     * 
-     */
-    @Export(name="maxReplicas", refs={Integer.class}, tree="[0]")
-    private Output</* @Nullable */ Integer> maxReplicas;
-
-    /**
-     * @return Maximum number of replicas
-     * 
-     */
-    public Output<Optional<Integer>> maxReplicas() {
-        return Codegen.optional(this.maxReplicas);
-    }
-    /**
-     * Minimum number of replicas
-     * 
-     */
-    @Export(name="minReplicas", refs={Integer.class}, tree="[0]")
-    private Output</* @Nullable */ Integer> minReplicas;
-
-    /**
-     * @return Minimum number of replicas
-     * 
-     */
-    public Output<Optional<Integer>> minReplicas() {
-        return Codegen.optional(this.minReplicas);
     }
     /**
      * Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
@@ -238,32 +196,18 @@ public class VertexModelDeployment extends com.pulumi.resources.CustomResource {
         return this.region;
     }
     /**
-     * Service account for the deployment
+     * Service account for the model. If ModelImage is pointing to a private registry, this service account must have read access to the registry.
      * 
      */
     @Export(name="serviceAccount", refs={String.class}, tree="[0]")
-    private Output</* @Nullable */ String> serviceAccount;
+    private Output<String> serviceAccount;
 
     /**
-     * @return Service account for the deployment
+     * @return Service account for the model. If ModelImage is pointing to a private registry, this service account must have read access to the registry.
      * 
      */
-    public Output<Optional<String>> serviceAccount() {
-        return Codegen.optional(this.serviceAccount);
-    }
-    /**
-     * Traffic percentage for this deployment
-     * 
-     */
-    @Export(name="trafficPercent", refs={Integer.class}, tree="[0]")
-    private Output</* @Nullable */ Integer> trafficPercent;
-
-    /**
-     * @return Traffic percentage for this deployment
-     * 
-     */
-    public Output<Optional<Integer>> trafficPercent() {
-        return Codegen.optional(this.trafficPercent);
+    public Output<String> serviceAccount() {
+        return this.serviceAccount;
     }
 
     /**

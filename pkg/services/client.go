@@ -13,6 +13,7 @@ import (
 // VertexModelClient interface defines operations for uploading models.
 type VertexModelClient interface {
 	UploadModel(ctx context.Context, req *aiplatformpb.UploadModelRequest, opts ...gax.CallOption) (*aiplatform.UploadModelOperation, error)
+	DeleteModel(ctx context.Context, req *aiplatformpb.DeleteModelRequest, opts ...gax.CallOption) (*aiplatform.DeleteModelOperation, error)
 	Close() error
 }
 

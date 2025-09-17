@@ -314,12 +314,21 @@ func TestVertexModelDeploymentCreate_ModelUploadOnly(t *testing.T) {
 // MockModelClient implements the VertexModelClient interface for testing.
 type MockModelClient struct {
 	UploadModelFunc func(ctx context.Context, req *aiplatformpb.UploadModelRequest, opts ...gax.CallOption) (*aiplatform.UploadModelOperation, error)
+	DeleteModelFunc func(ctx context.Context, req *aiplatformpb.DeleteModelRequest, opts ...gax.CallOption) (*aiplatform.DeleteModelOperation, error)
 	CloseFunc       func() error
 }
 
 func (m *MockModelClient) UploadModel(ctx context.Context, req *aiplatformpb.UploadModelRequest, opts ...gax.CallOption) (*aiplatform.UploadModelOperation, error) {
 	if m.UploadModelFunc != nil {
 		return m.UploadModelFunc(ctx, req, opts...)
+	}
+
+	return nil, nil
+}
+
+func (m *MockModelClient) DeleteModel(ctx context.Context, req *aiplatformpb.DeleteModelRequest, opts ...gax.CallOption) (*aiplatform.DeleteModelOperation, error) {
+	if m.DeleteModelFunc != nil {
+		return m.DeleteModelFunc(ctx, req, opts...)
 	}
 
 	return nil, nil
@@ -384,5 +393,157 @@ func MockModelClientFactory(mockClient *MockModelClient) services.ModelClientFac
 func MockEndpointClientFactory(mockClient *MockEndpointClient) services.EndpointClientFactory {
 	return func(_ context.Context, _ string) (services.VertexEndpointClient, error) {
 		return mockClient, nil
+	}
+}
+
+//nolint:paralleltest,tparallel // Cannot run in parallel due to shared testFactoryRegistry
+func TestVertexModelDeploymentDelete_ModelOnly(t *testing.T) {
+	ctx := context.Background()
+
+	// Test state for model-only deletion (no endpoint deployment)
+	projectID := "test-project"
+	region := "us-central1"
+	modelName := "projects/test-project/locations/us-central1/models/1234567890"
+	createTime := "2023-10-15T10:30:00Z"
+
+	// Variables to capture request parameters
+	var capturedDeleteRequest *aiplatformpb.DeleteModelRequest
+
+	state := VertexModelDeploymentState{
+		VertexModelDeploymentArgs: VertexModelDeploymentArgs{
+			ProjectID: projectID,
+			Region:    region,
+		},
+		ModelName:       modelName,
+		DeployedModelID: "", // Empty - no endpoint deployment
+		EndpointName:    "", // Empty - no endpoint deployment
+		CreateTime:      createTime,
+	}
+
+	req := infer.DeleteRequest[VertexModelDeploymentState]{
+		ID:    "test-model-only",
+		State: state,
+	}
+
+	modelClientFactory := MockModelClientFactory(&MockModelClient{
+		DeleteModelFunc: func(_ context.Context, req *aiplatformpb.DeleteModelRequest, _ ...gax.CallOption) (*aiplatform.DeleteModelOperation, error) {
+			capturedDeleteRequest = req
+
+			return nil, nil // Simulate mocked operation
+		},
+	})
+
+	// Endpoint client should not be called for model-only deletion
+	endpointClientFactory := MockEndpointClientFactory(&MockEndpointClient{
+		UndeployModelFunc: func(_ context.Context, _ *aiplatformpb.UndeployModelRequest, _ ...gax.CallOption) (*aiplatform.UndeployModelOperation, error) {
+			t.Error("UndeployModel should not be called for model-only deletion")
+
+			return nil, nil
+		},
+	})
+
+	provider := &VertexModelDeployment{}
+	testFactoryRegistry.modelClientFactory = modelClientFactory
+	testFactoryRegistry.endpointClientFactory = endpointClientFactory
+
+	// Execute deletion
+	_, err := provider.Delete(ctx, req)
+	if err != nil {
+		t.Fatalf("Expected nil error from mock, but got %v", err)
+	}
+
+	// Validate DeleteModelRequest was captured and has correct parameters
+	if capturedDeleteRequest == nil {
+		t.Fatal("DeleteModelRequest was not captured")
+	}
+
+	// Assert model name format
+	if capturedDeleteRequest.Name != modelName {
+		t.Errorf("Expected Name %s, got %s", modelName, capturedDeleteRequest.Name)
+	}
+}
+
+//nolint:paralleltest,tparallel // Cannot run in parallel due to shared testFactoryRegistry
+func TestVertexModelDeploymentDelete_ModelWithEndpoint(t *testing.T) {
+	ctx := context.Background()
+
+	// Test state for model deletion with endpoint deployment
+	projectID := "test-project"
+	region := "us-central1"
+	endpointID := "test-endpoint"
+	modelName := "projects/test-project/locations/us-central1/models/1234567890"
+	deployedModelID := "deployed-model-id-123"
+	createTime := "2023-10-15T10:30:00Z"
+
+	// Variables to capture request parameters
+	var capturedUndeployRequest *aiplatformpb.UndeployModelRequest
+	var capturedDeleteRequest *aiplatformpb.DeleteModelRequest
+
+	state := VertexModelDeploymentState{
+		VertexModelDeploymentArgs: VertexModelDeploymentArgs{
+			ProjectID: projectID,
+			Region:    region,
+		},
+		ModelName:       modelName,
+		DeployedModelID: deployedModelID, // Has endpoint deployment
+		EndpointName:    endpointID,      // Has endpoint deployment
+		CreateTime:      createTime,
+	}
+
+	req := infer.DeleteRequest[VertexModelDeploymentState]{
+		ID:    "test-model-with-endpoint",
+		State: state,
+	}
+
+	modelClientFactory := MockModelClientFactory(&MockModelClient{
+		DeleteModelFunc: func(_ context.Context, req *aiplatformpb.DeleteModelRequest, _ ...gax.CallOption) (*aiplatform.DeleteModelOperation, error) {
+			capturedDeleteRequest = req
+
+			return nil, nil // Simulate mocked operation
+		},
+	})
+
+	endpointClientFactory := MockEndpointClientFactory(&MockEndpointClient{
+		UndeployModelFunc: func(_ context.Context, req *aiplatformpb.UndeployModelRequest, _ ...gax.CallOption) (*aiplatform.UndeployModelOperation, error) {
+			capturedUndeployRequest = req
+
+			return nil, nil // Simulate mocked operation
+		},
+	})
+
+	provider := &VertexModelDeployment{}
+	testFactoryRegistry.modelClientFactory = modelClientFactory
+	testFactoryRegistry.endpointClientFactory = endpointClientFactory
+
+	// Execute deletion
+	_, err := provider.Delete(ctx, req)
+	if err != nil {
+		t.Fatalf("Expected nil error from mock, but got %v", err)
+	}
+
+	// Validate UndeployModelRequest was captured first and has correct parameters
+	if capturedUndeployRequest == nil {
+		t.Fatal("UndeployModelRequest was not captured")
+	}
+
+	// Assert endpoint format
+	expectedEndpoint := "projects/test-project/locations/us-central1/endpoints/test-endpoint"
+	if capturedUndeployRequest.Endpoint != expectedEndpoint {
+		t.Errorf("Expected Endpoint %s, got %s", expectedEndpoint, capturedUndeployRequest.Endpoint)
+	}
+
+	// Assert deployed model ID
+	if capturedUndeployRequest.DeployedModelId != deployedModelID {
+		t.Errorf("Expected DeployedModelId %s, got %s", deployedModelID, capturedUndeployRequest.DeployedModelId)
+	}
+
+	// Validate DeleteModelRequest was captured after undeployment and has correct parameters
+	if capturedDeleteRequest == nil {
+		t.Fatal("DeleteModelRequest was not captured")
+	}
+
+	// Assert model name format
+	if capturedDeleteRequest.Name != modelName {
+		t.Errorf("Expected Name %s, got %s", modelName, capturedDeleteRequest.Name)
 	}
 }

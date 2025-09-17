@@ -173,9 +173,44 @@ func (v VertexModelDeployment) Delete(
 			return infer.DeleteResponse{}, fmt.Errorf("failed to undeploy model: %w", err)
 		}
 
-		_, err = undeployOperation.Wait(ctx)
+		if undeployOperation == nil {
+			log.Printf("Warning: model undeploy operation is nil?!? This must be a mocked client. Logging error and moving on.")
+		} else {
+			_, err = undeployOperation.Wait(ctx)
+			if err != nil {
+				return infer.DeleteResponse{}, fmt.Errorf("failed to wait for undeployment: %w", err)
+			}
+		}
+	}
+
+	// After undeploying, delete the model
+	modelClientFactory := v.getModelClientFactory()
+	modelClient, err := modelClientFactory(ctx, req.State.Region)
+	if err != nil {
+		return infer.DeleteResponse{}, fmt.Errorf("failed to create model client: %w", err)
+	}
+	defer func() {
+		if closeErr := modelClient.Close(); closeErr != nil {
+			log.Printf("failed to close model client: %v", closeErr)
+		}
+	}()
+
+	deleteReq := &aiplatformpb.DeleteModelRequest{
+		// Model name is already in the format projects/{project}/locations/{location}/models/{model ID}
+		Name: req.State.ModelName,
+	}
+
+	deleteOperation, err := modelClient.DeleteModel(ctx, deleteReq)
+	if err != nil {
+		return infer.DeleteResponse{}, fmt.Errorf("failed to delete model: %w", err)
+	}
+
+	if deleteOperation == nil {
+		log.Printf("Warning: model delete operation is nil?!? This must be a mocked client. Logging error and moving on.")
+	} else {
+		err = deleteOperation.Wait(ctx)
 		if err != nil {
-			return infer.DeleteResponse{}, fmt.Errorf("failed to wait for undeployment: %w", err)
+			return infer.DeleteResponse{}, fmt.Errorf("failed to wait for deletion: %w", err)
 		}
 	}
 

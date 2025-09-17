@@ -13,13 +13,18 @@ import (
 	"github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment/pkg/services"
 )
 
+const (
+	testProjectID = "test-project"
+	testRegion    = "us-central1"
+)
+
 //nolint:paralleltest,tparallel // Cannot run in parallel due to shared testFactoryRegistry
 func TestVertexModelDeploymentCreate_ModelUploadAndDeployRequests(t *testing.T) {
 	ctx := context.Background()
 
 	// Test inputs
-	projectID := "test-project"
-	region := "us-central1"
+	projectID := testProjectID
+	region := testRegion
 	endpointID := "test-endpoint"
 	modelImageURL := "gcr.io/test-project/custom-model:latest"
 	modelArtifactsBucketURI := "gs://test-bucket/model-artifacts/"
@@ -211,8 +216,8 @@ func TestVertexModelDeploymentCreate_ModelUploadOnly(t *testing.T) {
 	ctx := context.Background()
 
 	// Test inputs for model upload without endpoint deployment
-	projectID := "test-project"
-	region := "us-central1"
+	projectID := testProjectID
+	region := testRegion
 	modelImageURL := "gcr.io/test-project/custom-model:latest"
 	modelArtifactsBucketURI := "gs://test-bucket/model-artifacts/"
 	modelPredictionInputSchemaURI := "gs://test-bucket/schemas/input_schema.json"
@@ -401,8 +406,8 @@ func TestVertexModelDeploymentDelete_ModelOnly(t *testing.T) {
 	ctx := context.Background()
 
 	// Test state for model-only deletion (no endpoint deployment)
-	projectID := "test-project"
-	region := "us-central1"
+	projectID := testProjectID
+	region := testRegion
 	modelName := "projects/test-project/locations/us-central1/models/1234567890"
 	createTime := "2023-10-15T10:30:00Z"
 
@@ -468,8 +473,8 @@ func TestVertexModelDeploymentDelete_ModelWithEndpoint(t *testing.T) {
 	ctx := context.Background()
 
 	// Test state for model deletion with endpoint deployment
-	projectID := "test-project"
-	region := "us-central1"
+	projectID := testProjectID
+	region := testRegion
 	endpointID := "test-endpoint"
 	modelName := "projects/test-project/locations/us-central1/models/1234567890"
 	deployedModelID := "deployed-model-id-123"

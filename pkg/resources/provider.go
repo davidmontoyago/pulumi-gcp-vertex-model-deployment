@@ -154,32 +154,18 @@ func (v VertexModelDeployment) Delete(
 		endpointClientFactory := v.getEndpointClientFactory()
 		endpointClient, err := endpointClientFactory(ctx, req.State.Region)
 		if err != nil {
-			return infer.DeleteResponse{}, fmt.Errorf("failed to create endpoint client: %w", err)
+			return infer.DeleteResponse{}, fmt.Errorf("failed to create endpoint client for undeployment: %w", err)
 		}
 		defer func() {
 			if closeErr := endpointClient.Close(); closeErr != nil {
-				log.Printf("failed to close endpoint client: %v", closeErr)
+				log.Printf("failed to close endpoint client for undeployment: %v", closeErr)
 			}
 		}()
 
-		undeployReq := &aiplatformpb.UndeployModelRequest{
-			Endpoint: fmt.Sprintf("projects/%s/locations/%s/endpoints/%s",
-				req.State.ProjectID, req.State.Region, req.State.EndpointName),
-			DeployedModelId: req.State.DeployedModelID,
-		}
-
-		undeployOperation, err := endpointClient.UndeployModel(ctx, undeployReq)
+		undeployer := services.NewVertexModelUndeploy(ctx, endpointClient, req.State.ProjectID, req.State.Region)
+		err = undeployer.Undeploy(ctx, req.State.EndpointName, req.State.DeployedModelID)
 		if err != nil {
 			return infer.DeleteResponse{}, fmt.Errorf("failed to undeploy model: %w", err)
-		}
-
-		if undeployOperation == nil {
-			log.Printf("Warning: model undeploy operation is nil?!? This must be a mocked client. Logging error and moving on.")
-		} else {
-			_, err = undeployOperation.Wait(ctx)
-			if err != nil {
-				return infer.DeleteResponse{}, fmt.Errorf("failed to wait for undeployment: %w", err)
-			}
 		}
 	}
 
@@ -195,23 +181,10 @@ func (v VertexModelDeployment) Delete(
 		}
 	}()
 
-	deleteReq := &aiplatformpb.DeleteModelRequest{
-		// Model name is already in the format projects/{project}/locations/{location}/models/{model ID}
-		Name: req.State.ModelName,
-	}
-
-	deleteOperation, err := modelClient.DeleteModel(ctx, deleteReq)
+	deleter := services.NewVertexModelDelete(ctx, modelClient, req.State.ModelName)
+	err = deleter.Delete(ctx, req.State.ModelName)
 	if err != nil {
 		return infer.DeleteResponse{}, fmt.Errorf("failed to delete model: %w", err)
-	}
-
-	if deleteOperation == nil {
-		log.Printf("Warning: model delete operation is nil?!? This must be a mocked client. Logging error and moving on.")
-	} else {
-		err = deleteOperation.Wait(ctx)
-		if err != nil {
-			return infer.DeleteResponse{}, fmt.Errorf("failed to wait for deletion: %w", err)
-		}
 	}
 
 	return infer.DeleteResponse{}, nil

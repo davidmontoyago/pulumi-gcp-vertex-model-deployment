@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 
 	"cloud.google.com/go/aiplatform/apiv1/aiplatformpb"
 )
@@ -34,7 +35,7 @@ func (g *VertexModelGet) Get(ctx context.Context, modelName string) (*aiplatform
 
 	model, err := g.modelClient.GetModel(ctx, getReq)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get model: %w", err)
 	}
 
 	return model, nil

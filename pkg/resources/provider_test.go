@@ -14,16 +14,16 @@ import (
 )
 
 const (
-	testProjectID                     = "test-project"
-	testRegion                        = "us-central1"
-	testEndpointID                    = "test-endpoint"
-	testModelImageURL                 = "gcr.io/test-project/custom-model:latest"
-	testModelArtifactsBucketURI       = "gs://test-bucket/model-artifacts/"
-	testModelPredictionInputSchemaURI = "gs://test-bucket/schemas/input_schema.json"
+	testProjectID                      = "test-project"
+	testRegion                         = "us-central1"
+	testEndpointID                     = "test-endpoint"
+	testModelImageURL                  = "gcr.io/test-project/custom-model:latest"
+	testModelArtifactsBucketURI        = "gs://test-bucket/model-artifacts/"
+	testModelPredictionInputSchemaURI  = "gs://test-bucket/schemas/input_schema.json"
 	testModelPredictionOutputSchemaURI = "gs://test-bucket/schemas/output_schema.json"
-	testEndpointPath                  = "projects/test-project/locations/us-central1/endpoints/test-endpoint"
-	testModelName                     = "projects/test-project/locations/us-central1/models/1234567890"
-	testCreateTime                    = "2023-10-15T10:30:00Z"
+	testEndpointPath                   = "projects/test-project/locations/us-central1/endpoints/test-endpoint"
+	testModelName                      = "projects/test-project/locations/us-central1/models/1234567890"
+	testCreateTime                     = "2023-10-15T10:30:00Z"
 )
 
 //nolint:paralleltest,tparallel // Cannot run in parallel due to shared testFactoryRegistry

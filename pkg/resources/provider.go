@@ -214,49 +214,114 @@ func (v VertexModelDeployment) Read(
 	req infer.ReadRequest[VertexModelDeploymentArgs, VertexModelDeploymentState],
 ) (infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState], error) {
 
-	// Only check endpoint deployment if the model was deployed to an endpoint
-	if req.State.DeployedModelID == "" || req.State.EndpointName == "" {
-		return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{}, nil
-	}
+	// Create a copy of the current state to modify
+	state := req.State
 
-	// Create endpoint client using the factory
-	endpointClientFactory := v.getEndpointClientFactory()
-	endpointClient, err := endpointClientFactory(ctx, req.State.Region)
-	if err != nil {
-		return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{}, err
-	}
-	defer func() {
-		if closeErr := endpointClient.Close(); closeErr != nil {
-			log.Printf("failed to close endpoint client: %v", closeErr)
+	if req.State.ModelName != "" {
+		// Lookup the model
+		modelClientFactory := v.getModelClientFactory()
+		modelClient, err := modelClientFactory(ctx, req.State.Region)
+		if err != nil {
+			return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{}, err
 		}
-	}()
+		defer func() {
+			if closeErr := modelClient.Close(); closeErr != nil {
+				log.Printf("failed to close model client: %v", closeErr)
+			}
+		}()
 
-	getReq := &aiplatformpb.GetEndpointRequest{
-		Name: fmt.Sprintf("projects/%s/locations/%s/endpoints/%s",
-			req.State.ProjectID, req.State.Region, req.State.EndpointName),
-	}
+		modelGetter := services.NewVertexModelGet(ctx, modelClient, req.State.ModelName)
+		model, err := modelGetter.Get(ctx, req.State.ModelName)
+		if err != nil {
+			return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{}, err
+		}
 
-	endpoint, err := endpointClient.GetEndpoint(ctx, getReq)
-	if err != nil {
-		return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{}, err
-	}
+		// Update state with current model values
+		state.ModelName = model.Name
+		state.ModelArtifactsBucketURI = model.ArtifactUri
+		state.Labels = model.Labels
 
-	// Verify the deployed model still exists
-	var found bool
-	for _, deployedModel := range endpoint.DeployedModels {
-		if deployedModel.Id == req.ID {
-			found = true
+		// Safely access ContainerSpec fields
+		if model.ContainerSpec != nil {
+			state.ModelImageURL = model.ContainerSpec.ImageUri
+			state.PredictRoute = model.ContainerSpec.PredictRoute
+			state.HealthRoute = model.ContainerSpec.HealthRoute
+		}
 
-			break
+		// Safely access PredictSchemata fields
+		if model.PredictSchemata != nil {
+			state.ModelPredictionInputSchemaURI = model.PredictSchemata.InstanceSchemaUri
+			state.ModelPredictionOutputSchemaURI = model.PredictSchemata.PredictionSchemaUri
 		}
 	}
 
-	if !found {
-		// Model is no longer deployed
-		return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{}, nil
+	if req.State.DeployedModelID != "" && req.State.EndpointName != "" {
+		// Lookup the endpoint if model is deployed to an endpoint
+
+		endpointClientFactory := v.getEndpointClientFactory()
+		endpointClient, err := endpointClientFactory(ctx, req.State.Region)
+		if err != nil {
+			return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{}, err
+		}
+		defer func() {
+			if closeErr := endpointClient.Close(); closeErr != nil {
+				log.Printf("failed to close endpoint client: %v", closeErr)
+			}
+		}()
+
+		getReq := &aiplatformpb.GetEndpointRequest{
+			Name: fmt.Sprintf("projects/%s/locations/%s/endpoints/%s",
+				req.State.ProjectID, req.State.Region, req.State.EndpointName),
+		}
+
+		endpoint, err := endpointClient.GetEndpoint(ctx, getReq)
+		if err != nil {
+			return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{}, err
+		}
+
+		// Verify the deployed model still exists and update its properties
+		var foundDeployedModel *aiplatformpb.DeployedModel
+		for _, deployedModel := range endpoint.DeployedModels {
+			if deployedModel.Id == req.State.DeployedModelID {
+				foundDeployedModel = deployedModel
+
+				break
+			}
+		}
+
+		if foundDeployedModel == nil {
+			// Model is no longer deployed - return empty response to indicate resource doesn't exist
+			return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{}, nil
+		}
+
+		// Update state with current endpoint and deployed model information
+		state.EndpointName = endpoint.Name
+		state.DeployedModelID = foundDeployedModel.Id
+
+		// Update endpoint deployment configuration with current values if available
+		if state.EndpointModelDeployment != nil && foundDeployedModel.PredictionResources != nil {
+			// Extract current deployment configuration from the deployed model
+			if dedicatedResources := foundDeployedModel.GetDedicatedResources(); dedicatedResources != nil {
+				if machineSpec := dedicatedResources.MachineSpec; machineSpec != nil {
+					state.EndpointModelDeployment.MachineType = machineSpec.MachineType
+				}
+				state.EndpointModelDeployment.MinReplicas = int(dedicatedResources.MinReplicaCount)
+				state.EndpointModelDeployment.MaxReplicas = int(dedicatedResources.MaxReplicaCount)
+			}
+
+			// Update traffic percentage from endpoint's traffic split if available
+			if endpoint.TrafficSplit != nil {
+				if trafficPercent, exists := endpoint.TrafficSplit[foundDeployedModel.Id]; exists {
+					state.EndpointModelDeployment.TrafficPercent = int(trafficPercent)
+				}
+			}
+		}
 	}
 
-	return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState](req), nil
+	return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{
+		Inputs: req.Inputs,
+		State:  state,
+	}, nil
 }
 
 // testFactoryRegistry holds test factories for dependency injection during testing

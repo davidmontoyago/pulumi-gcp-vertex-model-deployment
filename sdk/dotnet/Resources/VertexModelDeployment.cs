@@ -40,6 +40,9 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources
         [Output("endpointName")]
         public Output<string> EndpointName { get; private set; } = null!;
 
+        [Output("healthRoute")]
+        public Output<string?> HealthRoute { get; private set; } = null!;
+
         /// <summary>
         /// Labels for the deployment
         /// </summary>
@@ -78,6 +81,9 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources
         /// </summary>
         [Output("modelPredictionOutputSchemaUri")]
         public Output<string> ModelPredictionOutputSchemaUri { get; private set; } = null!;
+
+        [Output("predictRoute")]
+        public Output<string?> PredictRoute { get; private set; } = null!;
 
         /// <summary>
         /// Google Cloud Project ID
@@ -149,6 +155,9 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources
         [Input("endpointModelDeployment")]
         public Input<Inputs.EndpointModelDeploymentArgsArgs>? EndpointModelDeployment { get; set; }
 
+        [Input("healthRoute")]
+        public Input<string>? HealthRoute { get; set; }
+
         [Input("labels")]
         private InputMap<string>? _labels;
 
@@ -190,6 +199,9 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources
         /// </summary>
         [Input("modelPredictionOutputSchemaUri", required: true)]
         public Input<string> ModelPredictionOutputSchemaUri { get; set; } = null!;
+
+        [Input("predictRoute")]
+        public Input<string>? PredictRoute { get; set; }
 
         /// <summary>
         /// Google Cloud Project ID

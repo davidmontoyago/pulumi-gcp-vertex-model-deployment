@@ -22,6 +22,8 @@ type ModelUpload struct {
 	ModelPredictionInputSchemaURI    string
 	ModelPredictionOutputSchemaURI   string
 	ModelPredictionBehaviorSchemaURI string
+	PredictRoute                     string
+	HealthRoute                      string
 }
 
 // ModelUploader interface defines operations for uploading models.
@@ -62,32 +64,36 @@ func (u *VertexModelUpload) Upload(ctx context.Context, params ModelUpload) (str
 		predictionSchema.ParametersSchemaUri = params.ModelPredictionBehaviorSchemaURI
 	}
 
+	modelArgs := &aiplatformpb.Model{
+		DisplayName: params.Name,
+		Description: "Uploaded model for " + params.ModelImageURL,
+		ContainerSpec: &aiplatformpb.ModelContainerSpec{
+			ImageUri: params.ModelImageURL,
+			Args: []string{
+				"--allow_precompilation=false",
+				"--disable_optimizer=true",
+				"--saved_model_tags='serve,tpu'",
+				"--use_tfrt=true",
+			},
+		},
+		Labels:          u.labels,
+		ArtifactUri:     params.ModelArtifactsBucketURI,
+		PredictSchemata: predictionSchema,
+	}
+
+	if params.PredictRoute != "" {
+		modelArgs.ContainerSpec.PredictRoute = params.PredictRoute
+	}
+	if params.HealthRoute != "" {
+		modelArgs.ContainerSpec.HealthRoute = params.HealthRoute
+	}
+
 	modelUploadOp, err := u.modelClient.UploadModel(ctx, &aiplatformpb.UploadModelRequest{
 		// TODO support non traditional / global models
 		// GCP endpoint to which the model is attached. It can be regional or global, depending on the model type.
 		Parent:         fmt.Sprintf("projects/%s/locations/%s", u.projectID, u.region),
 		ServiceAccount: params.ServiceAccountEmail,
-		Model: &aiplatformpb.Model{
-			DisplayName: params.Name,
-			Description: "Uploaded model for " + params.ModelImageURL,
-			ContainerSpec: &aiplatformpb.ModelContainerSpec{
-				ImageUri: params.ModelImageURL,
-				// TODO make me configurable
-				Args: []string{
-					"--allow_precompilation=false",
-					"--disable_optimizer=true",
-					"--saved_model_tags='serve,tpu'",
-					"--use_tfrt=true",
-				},
-			},
-			Labels: u.labels,
-			// May be optional for custom models but required for TensorFlow pre-built images.
-			// See:
-			// - https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts#framework-requirements
-			ArtifactUri: params.ModelArtifactsBucketURI,
-			// Paths to the model's prediction schemas
-			PredictSchemata: predictionSchema,
-		},
+		Model:          modelArgs,
 	}, gax.WithTimeout(5*time.Minute))
 	if err != nil {
 		var apiError *apierror.APIError

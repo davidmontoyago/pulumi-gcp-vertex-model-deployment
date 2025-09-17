@@ -33,6 +33,13 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
         return Optional.ofNullable(this.endpointModelDeployment);
     }
 
+    @Import(name="healthRoute")
+    private @Nullable Output<String> healthRoute;
+
+    public Optional<Output<String>> healthRoute() {
+        return Optional.ofNullable(this.healthRoute);
+    }
+
     /**
      * Labels for the deployment
      * 
@@ -123,6 +130,13 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
         return this.modelPredictionOutputSchemaUri;
     }
 
+    @Import(name="predictRoute")
+    private @Nullable Output<String> predictRoute;
+
+    public Optional<Output<String>> predictRoute() {
+        return Optional.ofNullable(this.predictRoute);
+    }
+
     /**
      * Google Cloud Project ID
      * 
@@ -172,12 +186,14 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
 
     private VertexModelDeploymentArgs(VertexModelDeploymentArgs $) {
         this.endpointModelDeployment = $.endpointModelDeployment;
+        this.healthRoute = $.healthRoute;
         this.labels = $.labels;
         this.modelArtifactsBucketUri = $.modelArtifactsBucketUri;
         this.modelImageUrl = $.modelImageUrl;
         this.modelPredictionBehaviorSchemaUri = $.modelPredictionBehaviorSchemaUri;
         this.modelPredictionInputSchemaUri = $.modelPredictionInputSchemaUri;
         this.modelPredictionOutputSchemaUri = $.modelPredictionOutputSchemaUri;
+        this.predictRoute = $.predictRoute;
         this.projectId = $.projectId;
         this.region = $.region;
         this.serviceAccount = $.serviceAccount;
@@ -220,6 +236,15 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
          */
         public Builder endpointModelDeployment(EndpointModelDeploymentArgsArgs endpointModelDeployment) {
             return endpointModelDeployment(Output.of(endpointModelDeployment));
+        }
+
+        public Builder healthRoute(@Nullable Output<String> healthRoute) {
+            $.healthRoute = healthRoute;
+            return this;
+        }
+
+        public Builder healthRoute(String healthRoute) {
+            return healthRoute(Output.of(healthRoute));
         }
 
         /**
@@ -346,6 +371,15 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
          */
         public Builder modelPredictionOutputSchemaUri(String modelPredictionOutputSchemaUri) {
             return modelPredictionOutputSchemaUri(Output.of(modelPredictionOutputSchemaUri));
+        }
+
+        public Builder predictRoute(@Nullable Output<String> predictRoute) {
+            $.predictRoute = predictRoute;
+            return this;
+        }
+
+        public Builder predictRoute(String predictRoute) {
+            return predictRoute(Output.of(predictRoute));
         }
 
         /**

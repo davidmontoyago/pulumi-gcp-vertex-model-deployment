@@ -23,7 +23,8 @@ type VertexModelDeployment struct {
 	// Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
 	EndpointModelDeployment EndpointModelDeploymentArgsPtrOutput `pulumi:"endpointModelDeployment"`
 	// Full name of the endpoint
-	EndpointName pulumi.StringOutput `pulumi:"endpointName"`
+	EndpointName pulumi.StringOutput    `pulumi:"endpointName"`
+	HealthRoute  pulumi.StringPtrOutput `pulumi:"healthRoute"`
 	// Labels for the deployment
 	Labels pulumi.StringMapOutput `pulumi:"labels"`
 	// Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
@@ -36,7 +37,8 @@ type VertexModelDeployment struct {
 	// Bucket URI to the schema for the model input
 	ModelPredictionInputSchemaUri pulumi.StringOutput `pulumi:"modelPredictionInputSchemaUri"`
 	// Bucket URI to the schema for the model output
-	ModelPredictionOutputSchemaUri pulumi.StringOutput `pulumi:"modelPredictionOutputSchemaUri"`
+	ModelPredictionOutputSchemaUri pulumi.StringOutput    `pulumi:"modelPredictionOutputSchemaUri"`
+	PredictRoute                   pulumi.StringPtrOutput `pulumi:"predictRoute"`
 	// Google Cloud Project ID
 	ProjectId pulumi.StringOutput `pulumi:"projectId"`
 	// Google Cloud region
@@ -111,6 +113,7 @@ func (VertexModelDeploymentState) ElementType() reflect.Type {
 type vertexModelDeploymentArgs struct {
 	// Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
 	EndpointModelDeployment *EndpointModelDeploymentArgs `pulumi:"endpointModelDeployment"`
+	HealthRoute             *string                      `pulumi:"healthRoute"`
 	// Labels for the deployment
 	Labels map[string]string `pulumi:"labels"`
 	// Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
@@ -122,7 +125,8 @@ type vertexModelDeploymentArgs struct {
 	// Bucket URI to the schema for the model input
 	ModelPredictionInputSchemaUri string `pulumi:"modelPredictionInputSchemaUri"`
 	// Bucket URI to the schema for the model output
-	ModelPredictionOutputSchemaUri string `pulumi:"modelPredictionOutputSchemaUri"`
+	ModelPredictionOutputSchemaUri string  `pulumi:"modelPredictionOutputSchemaUri"`
+	PredictRoute                   *string `pulumi:"predictRoute"`
 	// Google Cloud Project ID
 	ProjectId string `pulumi:"projectId"`
 	// Google Cloud region
@@ -135,6 +139,7 @@ type vertexModelDeploymentArgs struct {
 type VertexModelDeploymentArgs struct {
 	// Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
 	EndpointModelDeployment EndpointModelDeploymentArgsPtrInput
+	HealthRoute             pulumi.StringPtrInput
 	// Labels for the deployment
 	Labels pulumi.StringMapInput
 	// Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
@@ -147,6 +152,7 @@ type VertexModelDeploymentArgs struct {
 	ModelPredictionInputSchemaUri pulumi.StringInput
 	// Bucket URI to the schema for the model output
 	ModelPredictionOutputSchemaUri pulumi.StringInput
+	PredictRoute                   pulumi.StringPtrInput
 	// Google Cloud Project ID
 	ProjectId pulumi.StringInput
 	// Google Cloud region
@@ -262,6 +268,10 @@ func (o VertexModelDeploymentOutput) EndpointName() pulumi.StringOutput {
 	return o.ApplyT(func(v *VertexModelDeployment) pulumi.StringOutput { return v.EndpointName }).(pulumi.StringOutput)
 }
 
+func (o VertexModelDeploymentOutput) HealthRoute() pulumi.StringPtrOutput {
+	return o.ApplyT(func(v *VertexModelDeployment) pulumi.StringPtrOutput { return v.HealthRoute }).(pulumi.StringPtrOutput)
+}
+
 // Labels for the deployment
 func (o VertexModelDeploymentOutput) Labels() pulumi.StringMapOutput {
 	return o.ApplyT(func(v *VertexModelDeployment) pulumi.StringMapOutput { return v.Labels }).(pulumi.StringMapOutput)
@@ -294,6 +304,10 @@ func (o VertexModelDeploymentOutput) ModelPredictionInputSchemaUri() pulumi.Stri
 // Bucket URI to the schema for the model output
 func (o VertexModelDeploymentOutput) ModelPredictionOutputSchemaUri() pulumi.StringOutput {
 	return o.ApplyT(func(v *VertexModelDeployment) pulumi.StringOutput { return v.ModelPredictionOutputSchemaUri }).(pulumi.StringOutput)
+}
+
+func (o VertexModelDeploymentOutput) PredictRoute() pulumi.StringPtrOutput {
+	return o.ApplyT(func(v *VertexModelDeployment) pulumi.StringPtrOutput { return v.PredictRoute }).(pulumi.StringPtrOutput)
 }
 
 // Google Cloud Project ID

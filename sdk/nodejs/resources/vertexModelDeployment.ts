@@ -52,6 +52,7 @@ export class VertexModelDeployment extends pulumi.CustomResource {
      * Full name of the endpoint
      */
     public /*out*/ readonly endpointName!: pulumi.Output<string>;
+    public readonly healthRoute!: pulumi.Output<string | undefined>;
     /**
      * Labels for the deployment
      */
@@ -77,6 +78,7 @@ export class VertexModelDeployment extends pulumi.CustomResource {
      * Bucket URI to the schema for the model output
      */
     public readonly modelPredictionOutputSchemaUri!: pulumi.Output<string>;
+    public readonly predictRoute!: pulumi.Output<string | undefined>;
     /**
      * Google Cloud Project ID
      */
@@ -123,12 +125,14 @@ export class VertexModelDeployment extends pulumi.CustomResource {
                 throw new Error("Missing required property 'serviceAccount'");
             }
             resourceInputs["endpointModelDeployment"] = args ? (args.endpointModelDeployment ? pulumi.output(args.endpointModelDeployment).apply(inputs.resources.endpointModelDeploymentArgsArgsProvideDefaults) : undefined) : undefined;
+            resourceInputs["healthRoute"] = args ? args.healthRoute : undefined;
             resourceInputs["labels"] = args ? args.labels : undefined;
             resourceInputs["modelArtifactsBucketUri"] = args ? args.modelArtifactsBucketUri : undefined;
             resourceInputs["modelImageUrl"] = args ? args.modelImageUrl : undefined;
             resourceInputs["modelPredictionBehaviorSchemaUri"] = args ? args.modelPredictionBehaviorSchemaUri : undefined;
             resourceInputs["modelPredictionInputSchemaUri"] = args ? args.modelPredictionInputSchemaUri : undefined;
             resourceInputs["modelPredictionOutputSchemaUri"] = args ? args.modelPredictionOutputSchemaUri : undefined;
+            resourceInputs["predictRoute"] = args ? args.predictRoute : undefined;
             resourceInputs["projectId"] = args ? args.projectId : undefined;
             resourceInputs["region"] = args ? args.region : undefined;
             resourceInputs["serviceAccount"] = args ? args.serviceAccount : undefined;
@@ -141,6 +145,7 @@ export class VertexModelDeployment extends pulumi.CustomResource {
             resourceInputs["deployedModelId"] = undefined /*out*/;
             resourceInputs["endpointModelDeployment"] = undefined /*out*/;
             resourceInputs["endpointName"] = undefined /*out*/;
+            resourceInputs["healthRoute"] = undefined /*out*/;
             resourceInputs["labels"] = undefined /*out*/;
             resourceInputs["modelArtifactsBucketUri"] = undefined /*out*/;
             resourceInputs["modelImageUrl"] = undefined /*out*/;
@@ -148,6 +153,7 @@ export class VertexModelDeployment extends pulumi.CustomResource {
             resourceInputs["modelPredictionBehaviorSchemaUri"] = undefined /*out*/;
             resourceInputs["modelPredictionInputSchemaUri"] = undefined /*out*/;
             resourceInputs["modelPredictionOutputSchemaUri"] = undefined /*out*/;
+            resourceInputs["predictRoute"] = undefined /*out*/;
             resourceInputs["projectId"] = undefined /*out*/;
             resourceInputs["region"] = undefined /*out*/;
             resourceInputs["serviceAccount"] = undefined /*out*/;
@@ -165,6 +171,7 @@ export interface VertexModelDeploymentArgs {
      * Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
      */
     endpointModelDeployment?: pulumi.Input<inputs.resources.EndpointModelDeploymentArgsArgs>;
+    healthRoute?: pulumi.Input<string>;
     /**
      * Labels for the deployment
      */
@@ -189,6 +196,7 @@ export interface VertexModelDeploymentArgs {
      * Bucket URI to the schema for the model output
      */
     modelPredictionOutputSchemaUri: pulumi.Input<string>;
+    predictRoute?: pulumi.Input<string>;
     /**
      * Google Cloud Project ID
      */

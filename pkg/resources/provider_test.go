@@ -217,6 +217,8 @@ func TestVertexModelDeploymentCreate_ModelUploadOnly(t *testing.T) {
 	modelArtifactsBucketURI := "gs://test-bucket/model-artifacts/"
 	modelPredictionInputSchemaURI := "gs://test-bucket/schemas/input_schema.json"
 	modelPredictionOutputSchemaURI := "gs://test-bucket/schemas/output_schema.json"
+	predictRoute := "/v1/models/custom:predict"
+	healthRoute := "/v1/models/custom:health"
 	serviceAccount := "test-service-account@test-project.iam.gserviceaccount.com"
 	resourceName := "test-model-upload-only"
 
@@ -233,6 +235,8 @@ func TestVertexModelDeploymentCreate_ModelUploadOnly(t *testing.T) {
 			ModelArtifactsBucketURI:        modelArtifactsBucketURI,
 			ModelPredictionInputSchemaURI:  modelPredictionInputSchemaURI,
 			ModelPredictionOutputSchemaURI: modelPredictionOutputSchemaURI,
+			PredictRoute:                   predictRoute,
+			HealthRoute:                    healthRoute,
 			// EndpointModelDeployment is not set - model upload only
 			ServiceAccount: serviceAccount,
 			Labels:         map[string]string{"env": "test", "mode": "batch"},
@@ -268,6 +272,25 @@ func TestVertexModelDeploymentCreate_ModelUploadOnly(t *testing.T) {
 	// Validate UploadModelRequest was captured
 	if capturedUploadRequest == nil {
 		t.Fatal("UploadModelRequest was not captured")
+	}
+
+	// Assert model properties
+	model := capturedUploadRequest.Model
+	if model == nil {
+		t.Fatal("Model is nil in upload request")
+	}
+
+	// Assert container spec routes
+	if model.ContainerSpec == nil {
+		t.Fatal("ContainerSpec is nil")
+	}
+
+	if model.ContainerSpec.PredictRoute != predictRoute {
+		t.Errorf("Expected PredictRoute %s, got %s", predictRoute, model.ContainerSpec.PredictRoute)
+	}
+
+	if model.ContainerSpec.HealthRoute != healthRoute {
+		t.Errorf("Expected HealthRoute %s, got %s", healthRoute, model.ContainerSpec.HealthRoute)
 	}
 
 	// DeployModel should not have been called (verified by the mock error above)

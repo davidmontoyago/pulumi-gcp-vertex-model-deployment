@@ -77,6 +77,12 @@ public class VertexModelDeployment extends com.pulumi.resources.CustomResource {
     public Output<String> endpointName() {
         return this.endpointName;
     }
+    @Export(name="healthRoute", refs={String.class}, tree="[0]")
+    private Output</* @Nullable */ String> healthRoute;
+
+    public Output<Optional<String>> healthRoute() {
+        return Codegen.optional(this.healthRoute);
+    }
     /**
      * Labels for the deployment
      * 
@@ -166,6 +172,12 @@ public class VertexModelDeployment extends com.pulumi.resources.CustomResource {
      */
     public Output<String> modelPredictionOutputSchemaUri() {
         return this.modelPredictionOutputSchemaUri;
+    }
+    @Export(name="predictRoute", refs={String.class}, tree="[0]")
+    private Output</* @Nullable */ String> predictRoute;
+
+    public Output<Optional<String>> predictRoute() {
+        return Codegen.optional(this.predictRoute);
     }
     /**
      * Google Cloud Project ID

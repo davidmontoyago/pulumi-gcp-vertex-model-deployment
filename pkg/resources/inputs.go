@@ -16,6 +16,13 @@ type VertexModelDeploymentArgs struct {
 	// must have read access to the registry.
 	ServiceAccount string `pulumi:"serviceAccount"`
 
+	// Path on the container to send prediction requests to.
+	// Not required for Endpoints.
+	PredictRoute string `pulumi:"predictRoute,optional"`
+	// Path on the container to send health requests to.
+	// Not required for Endpoints.
+	HealthRoute string `pulumi:"healthRoute,optional"`
+
 	// Target endpoint for the model deployment.
 	//
 	// Set only when serving the model on a Vertex AI Endpoint.

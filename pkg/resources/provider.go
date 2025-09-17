@@ -83,6 +83,8 @@ func (v VertexModelDeployment) Create(
 		ModelPredictionInputSchemaURI:    req.Inputs.ModelPredictionInputSchemaURI,
 		ModelPredictionOutputSchemaURI:   req.Inputs.ModelPredictionOutputSchemaURI,
 		ModelPredictionBehaviorSchemaURI: req.Inputs.ModelPredictionBehaviorSchemaURI,
+		PredictRoute:                     req.Inputs.PredictRoute,
+		HealthRoute:                      req.Inputs.HealthRoute,
 	})
 	if err != nil {
 		return infer.CreateResponse[VertexModelDeploymentState]{},

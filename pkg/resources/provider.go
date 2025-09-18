@@ -180,7 +180,7 @@ func (v VertexModelDeployment) Delete(
 		}
 	}()
 
-	deleter := services.NewVertexModelDelete(ctx, modelClient, req.State.ModelName)
+	deleter := services.NewVertexModelDelete(ctx, modelClient)
 	err = deleter.Delete(ctx, req.State.ModelName)
 	if err != nil {
 		return infer.DeleteResponse{}, fmt.Errorf("failed to delete model: %w", err)

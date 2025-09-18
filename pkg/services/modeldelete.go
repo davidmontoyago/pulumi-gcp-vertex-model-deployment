@@ -17,14 +17,12 @@ type ModelDeleter interface {
 // VertexModelDelete implements the ModelDeleter interface for Vertex AI.
 type VertexModelDelete struct {
 	modelClient VertexModelClient
-	modelName   string
 }
 
 // NewVertexModelDelete creates a new VertexModelDelete with the provided model client.
-func NewVertexModelDelete(_ context.Context, modelClient VertexModelClient, modelName string) *VertexModelDelete {
+func NewVertexModelDelete(_ context.Context, modelClient VertexModelClient) *VertexModelDelete {
 	return &VertexModelDelete{
 		modelClient: modelClient,
-		modelName:   modelName,
 	}
 }
 

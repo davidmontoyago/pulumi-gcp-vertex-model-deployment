@@ -93,9 +93,15 @@ func TestVertexModelDeploymentCreate_ModelUploadAndDeployRequests(t *testing.T) 
 	testFactoryRegistry.endpointClientFactory = endpointClientFactory
 
 	// Execute - we expect it to succeed despite nil operations
-	_, err := provider.Create(ctx, req)
+	result, err := provider.Create(ctx, req)
 	if err != nil {
 		t.Fatalf("Expected nil error from mock, but got %v", err)
+	}
+
+	// Assert resource ID format
+	expectedID := "test-project-us-central1-test-model-deployment"
+	if result.ID != expectedID {
+		t.Errorf("Expected resource ID %s, got %s", expectedID, result.ID)
 	}
 
 	// Validate UploadModelRequest was captured and has correct parameters
@@ -664,6 +670,11 @@ func TestVertexModelDeploymentRead_ModelOnly(t *testing.T) {
 		t.Fatalf("Expected nil error from Read, but got %v", err)
 	}
 
+	// Assert that the resource ID is preserved
+	if result.ID != req.ID {
+		t.Errorf("Expected resource ID %s, got %s", req.ID, result.ID)
+	}
+
 	// Validate GetModelRequest was captured and has correct parameters
 	if capturedGetModelRequest == nil {
 		t.Fatal("GetModelRequest was not captured")
@@ -1106,6 +1117,11 @@ func TestVertexModelDeploymentRead_ModelWithEndpoint(t *testing.T) {
 	result, err := provider.Read(ctx, req)
 	if err != nil {
 		t.Fatalf("Expected nil error from Read, but got %v", err)
+	}
+
+	// Assert that the resource ID is preserved
+	if result.ID != req.ID {
+		t.Errorf("Expected resource ID %s, got %s", req.ID, result.ID)
 	}
 
 	// Validate GetModelRequest was captured and has correct parameters

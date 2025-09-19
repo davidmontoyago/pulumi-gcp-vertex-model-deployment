@@ -5,9 +5,13 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/aiplatform/apiv1/aiplatformpb"
+	p "github.com/pulumi/pulumi-go-provider"
+	provider "github.com/pulumi/pulumi-go-provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
@@ -17,6 +21,13 @@ import (
 // VertexModelDeployment represents a Pulumi resource for deploying models to Vertex AI endpoints.
 type VertexModelDeployment struct{}
 
+// Compile-time interface compliance checks
+var _ infer.CustomCreate[VertexModelDeploymentArgs, VertexModelDeploymentState] = (*VertexModelDeployment)(nil)
+var _ infer.CustomRead[VertexModelDeploymentArgs, VertexModelDeploymentState] = (*VertexModelDeployment)(nil)
+var _ infer.CustomUpdate[VertexModelDeploymentArgs, VertexModelDeploymentState] = (*VertexModelDeployment)(nil)
+var _ infer.CustomDelete[VertexModelDeploymentState] = (*VertexModelDeployment)(nil)
+var _ infer.CustomDiff[VertexModelDeploymentArgs, VertexModelDeploymentState] = (*VertexModelDeployment)(nil)
+
 // Annotate provides metadata and descriptions for the VertexModelDeployment resource.
 func (VertexModelDeployment) Annotate(annotator infer.Annotator) {
 	annotator.Describe(&VertexModelDeployment{}, "Deploys a model to a Vertex AI endpoint")
@@ -25,8 +36,8 @@ func (VertexModelDeployment) Annotate(annotator infer.Annotator) {
 // VertexModelDeploymentState represents the state of a deployed Vertex AI model.
 type VertexModelDeploymentState struct {
 	VertexModelDeploymentArgs
-	DeployedModelID string `pulumi:"deployedModelId"`
 	ModelName       string `pulumi:"modelName"`
+	DeployedModelID string `pulumi:"deployedModelId"`
 	EndpointName    string `pulumi:"endpointName"`
 	CreateTime      string `pulumi:"createTime"`
 }
@@ -48,9 +59,11 @@ func (v VertexModelDeployment) Create(
 		VertexModelDeploymentArgs: req.Inputs,
 	}
 
+	resourceID := fmt.Sprintf("%s-%s-%s", req.Inputs.ProjectID, req.Inputs.Region, req.Name)
+
 	if req.DryRun {
 		return infer.CreateResponse[VertexModelDeploymentState]{
-			ID: fmt.Sprintf("%s-%s-%s", req.Inputs.ProjectID, req.Inputs.Region, req.Name),
+			ID: resourceID,
 		}, nil
 	}
 
@@ -134,8 +147,6 @@ func (v VertexModelDeployment) Create(
 		state.DeployedModelID = deployedModelID
 		state.EndpointName = req.Inputs.EndpointModelDeployment.EndpointID
 	}
-
-	resourceID := fmt.Sprintf("%s-%s-%s", req.Inputs.ProjectID, req.Inputs.Region, req.Name)
 
 	return infer.CreateResponse[VertexModelDeploymentState]{
 		ID:     resourceID,
@@ -375,26 +386,39 @@ func (v VertexModelDeployment) Read(
 	req infer.ReadRequest[VertexModelDeploymentArgs, VertexModelDeploymentState],
 ) (infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState], error) {
 
+	// Validate that we have the minimum required information to read the resource
+	if req.ID == "" {
+		return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{},
+			fmt.Errorf("resource ID is required for read operation")
+	}
+
 	// Create a copy of the current state to modify
 	state := req.State
 
+	// Always attempt to read the model if we have a model name
 	if req.State.ModelName != "" {
-		// Read the model from the registry
-
 		modelClientFactory := v.getModelClientFactory()
 		modelClient, err := modelClientFactory(ctx, req.State.Region)
 		if err != nil {
-			return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{}, fmt.Errorf("failed to create model client: %w", err)
+			// If we can't create the client, don't assume the resource is gone
+			return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{},
+				fmt.Errorf("failed to create model client: %w", err)
 		}
-		defer func() {
-			if closeErr := modelClient.Close(); closeErr != nil {
-				log.Printf("failed to close model client: %v", closeErr)
-			}
-		}()
+		defer modelClient.Close()
 
 		err = readRegistryModel(ctx, modelClient, req, &state)
 		if err != nil {
-			return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{}, fmt.Errorf("failed to read model from registry: %w", err)
+			// Check if this is a "not found" error specifically
+			// If the model truly doesn't exist, return empty response
+			// Otherwise, return the error
+			if isResourceNotFoundError(err) {
+				slog.Warn("Model no longer exists", "modelName", req.State.ModelName)
+
+				return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{}, nil
+			}
+
+			return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{},
+				fmt.Errorf("failed to read model from registry: %w", err)
 		}
 	}
 
@@ -419,9 +443,149 @@ func (v VertexModelDeployment) Read(
 	}
 
 	return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{
+		ID:     req.ID,
 		Inputs: req.Inputs,
 		State:  state,
 	}, nil
+}
+
+// Diff implements the diff logic to control what changes require replacement vs update
+func (v VertexModelDeployment) Diff(
+	ctx context.Context,
+	req infer.DiffRequest[VertexModelDeploymentArgs, VertexModelDeploymentState],
+) (p.DiffResponse, error) {
+
+	diff := p.DiffResponse{
+		HasChanges:   false,
+		DetailedDiff: make(map[string]provider.PropertyDiff),
+	}
+
+	// Properties that require replacement (immutable)
+	immutableProperties := map[string]bool{
+		"projectId": true,
+		"region":    true,
+	}
+
+	// Check ProjectID
+	if req.Inputs.ProjectID != req.State.ProjectID {
+		diff.HasChanges = true
+		if immutableProperties["projectId"] {
+			diff.DetailedDiff["projectId"] = p.PropertyDiff{
+				Kind:      p.UpdateReplace,
+				InputDiff: true,
+			}
+		} else {
+			diff.DetailedDiff["projectId"] = p.PropertyDiff{
+				Kind:      p.Update,
+				InputDiff: true,
+			}
+		}
+	}
+
+	// Check Region
+	if req.Inputs.Region != req.State.Region {
+		diff.HasChanges = true
+		if immutableProperties["region"] {
+			diff.DetailedDiff["region"] = p.PropertyDiff{
+				Kind:      p.UpdateReplace,
+				InputDiff: true,
+			}
+		} else {
+			diff.DetailedDiff["region"] = p.PropertyDiff{
+				Kind:      p.Update,
+				InputDiff: true,
+			}
+		}
+	}
+
+	// Check ModelImageURL - this can be updated
+	if req.Inputs.ModelImageURL != req.State.ModelImageURL {
+		diff.HasChanges = true
+		diff.DetailedDiff["modelImageUrl"] = p.PropertyDiff{
+			Kind:      p.Update,
+			InputDiff: true,
+		}
+	}
+
+	// Check ModelArtifactsBucketURI - this can be updated
+	if req.Inputs.ModelArtifactsBucketURI != req.State.ModelArtifactsBucketURI {
+		diff.HasChanges = true
+		diff.DetailedDiff["modelArtifactsBucketUri"] = p.PropertyDiff{
+			Kind:      p.Update,
+			InputDiff: true,
+		}
+	}
+
+	// Check prediction schema URIs - these can be updated
+	if req.Inputs.ModelPredictionInputSchemaURI != req.State.ModelPredictionInputSchemaURI {
+		diff.HasChanges = true
+		diff.DetailedDiff["modelPredictionInputSchemaUri"] = p.PropertyDiff{
+			Kind:      p.Update,
+			InputDiff: true,
+		}
+	}
+
+	if req.Inputs.ModelPredictionOutputSchemaURI != req.State.ModelPredictionOutputSchemaURI {
+		diff.HasChanges = true
+		diff.DetailedDiff["modelPredictionOutputSchemaUri"] = p.PropertyDiff{
+			Kind:      p.Update,
+			InputDiff: true,
+		}
+	}
+
+	if req.Inputs.ModelPredictionBehaviorSchemaURI != req.State.ModelPredictionBehaviorSchemaURI {
+		diff.HasChanges = true
+		diff.DetailedDiff["modelPredictionBehaviorSchemaUri"] = p.PropertyDiff{
+			Kind:      p.Update,
+			InputDiff: true,
+		}
+	}
+
+	// Check service account - this can be updated
+	if req.Inputs.ServiceAccount != req.State.ServiceAccount {
+		diff.HasChanges = true
+		diff.DetailedDiff["serviceAccount"] = p.PropertyDiff{
+			Kind:      p.Update,
+			InputDiff: true,
+		}
+	}
+
+	// Check route configurations - these can be updated
+	if req.Inputs.PredictRoute != req.State.PredictRoute {
+		diff.HasChanges = true
+		diff.DetailedDiff["predictRoute"] = p.PropertyDiff{
+			Kind:      p.Update,
+			InputDiff: true,
+		}
+	}
+
+	if req.Inputs.HealthRoute != req.State.HealthRoute {
+		diff.HasChanges = true
+		diff.DetailedDiff["healthRoute"] = p.PropertyDiff{
+			Kind:      p.Update,
+			InputDiff: true,
+		}
+	}
+
+	// Check labels - these can be updated
+	if !mapsEqual(req.Inputs.Labels, req.State.Labels) {
+		diff.HasChanges = true
+		diff.DetailedDiff["labels"] = p.PropertyDiff{
+			Kind:      p.Update,
+			InputDiff: true,
+		}
+	}
+
+	// Check endpoint model deployment configuration - this can be updated
+	if !endpointDeploymentEqual(req.Inputs.EndpointModelDeployment, req.State.EndpointModelDeployment) {
+		diff.HasChanges = true
+		diff.DetailedDiff["endpointModelDeployment"] = p.PropertyDiff{
+			Kind:      p.Update,
+			InputDiff: true,
+		}
+	}
+
+	return diff, nil
 }
 
 func readEndpointModel(ctx context.Context,
@@ -551,5 +715,37 @@ func mapsEqual(a, b map[string]string) bool {
 			return false
 		}
 	}
+
 	return true
+}
+
+// endpointDeploymentEqual checks if two EndpointModelDeploymentArgs are equal
+func endpointDeploymentEqual(a, b *EndpointModelDeploymentArgs) bool {
+	// Both nil
+	if a == nil && b == nil {
+		return true
+	}
+	// One nil, one not nil
+	if a == nil || b == nil {
+		return false
+	}
+	// Compare all fields
+	return a.EndpointID == b.EndpointID &&
+		a.MachineType == b.MachineType &&
+		a.MinReplicas == b.MinReplicas &&
+		a.MaxReplicas == b.MaxReplicas &&
+		a.TrafficPercent == b.TrafficPercent
+}
+
+// isResourceNotFoundError detects if the error indicates the resource doesn't exist
+func isResourceNotFoundError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	errStr := err.Error()
+
+	return strings.Contains(errStr, "not found") ||
+		strings.Contains(errStr, "does not exist") ||
+		strings.Contains(errStr, "404")
 }

@@ -7,7 +7,9 @@ import (
 	"log"
 	"time"
 
+	"cloud.google.com/go/aiplatform/apiv1/aiplatformpb"
 	"github.com/pulumi/pulumi-go-provider/infer"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment/pkg/services"
 )
@@ -190,20 +192,180 @@ func (v VertexModelDeployment) Delete(
 }
 
 // Update implements the update logic
-func (VertexModelDeployment) Update(
-	_ context.Context,
+func (v VertexModelDeployment) Update(
+	ctx context.Context,
 	req infer.UpdateRequest[VertexModelDeploymentArgs, VertexModelDeploymentState],
 ) (infer.UpdateResponse[VertexModelDeploymentState], error) {
 
-	// TODO For simplicity, we'll recreate on any change
-	return infer.UpdateResponse[VertexModelDeploymentState]{
-		Output: VertexModelDeploymentState{
-			VertexModelDeploymentArgs: req.Inputs,
-			DeployedModelID:           req.State.DeployedModelID,
-			ModelName:                 req.State.ModelName,
-			EndpointName:              req.State.EndpointName,
-			CreateTime:                req.State.CreateTime,
+	// Handle dry run - return the updated state without actually making changes
+	if req.DryRun {
+		return infer.UpdateResponse[VertexModelDeploymentState]{
+			Output: VertexModelDeploymentState{
+				VertexModelDeploymentArgs: req.Inputs,
+				DeployedModelID:           req.State.DeployedModelID,
+				ModelName:                 req.State.ModelName,
+				EndpointName:              req.State.EndpointName,
+				CreateTime:                req.State.CreateTime,
+			},
+		}, nil
+	}
+
+	// Check if any model properties actually need updating to avoid unnecessary API calls
+	needsUpdate := false
+	updatePathsMap := make(map[string]bool)
+
+	// Check if labels have changed
+	if !mapsEqual(req.Inputs.Labels, req.State.Labels) {
+		needsUpdate = true
+		updatePathsMap["labels"] = true
+	}
+
+	// Check if ModelImageURL has changed (affects description and container spec)
+	if req.Inputs.ModelImageURL != req.State.ModelImageURL {
+		needsUpdate = true
+		updatePathsMap["description"] = true
+		updatePathsMap["container_spec"] = true
+	}
+
+	// Check if ModelArtifactsBucketURI has changed
+	if req.Inputs.ModelArtifactsBucketURI != req.State.ModelArtifactsBucketURI {
+		needsUpdate = true
+		updatePathsMap["artifact_uri"] = true
+	}
+
+	// Check if prediction schema URIs have changed
+	if req.Inputs.ModelPredictionInputSchemaURI != req.State.ModelPredictionInputSchemaURI ||
+		req.Inputs.ModelPredictionOutputSchemaURI != req.State.ModelPredictionOutputSchemaURI ||
+		req.Inputs.ModelPredictionBehaviorSchemaURI != req.State.ModelPredictionBehaviorSchemaURI {
+		needsUpdate = true
+		updatePathsMap["predict_schemata"] = true
+	}
+
+	// Check if container routes have changed
+	if req.Inputs.PredictRoute != req.State.PredictRoute ||
+		req.Inputs.HealthRoute != req.State.HealthRoute {
+		needsUpdate = true
+		updatePathsMap["container_spec"] = true
+	}
+
+	// Convert map to slice
+	updatePaths := make([]string, 0, len(updatePathsMap))
+	for path := range updatePathsMap {
+		updatePaths = append(updatePaths, path)
+	}
+
+	// If no updates are needed, return current state
+	if !needsUpdate {
+		return infer.UpdateResponse[VertexModelDeploymentState]{
+			Output: req.State,
+		}, nil
+	}
+
+	modelClientFactory := v.getModelClientFactory()
+	modelClient, err := modelClientFactory(ctx, req.State.Region)
+	if err != nil {
+		return infer.UpdateResponse[VertexModelDeploymentState]{}, fmt.Errorf("failed to create model client: %w", err)
+	}
+	defer func() {
+		if closeErr := modelClient.Close(); closeErr != nil {
+			log.Printf("failed to close model client: %v", closeErr)
+		}
+	}()
+
+	// Build prediction schema (consistent with model creation)
+	predictionSchema := &aiplatformpb.PredictSchemata{
+		InstanceSchemaUri:   req.Inputs.ModelPredictionInputSchemaURI,
+		PredictionSchemaUri: req.Inputs.ModelPredictionOutputSchemaURI,
+	}
+	if req.Inputs.ModelPredictionBehaviorSchemaURI != "" {
+		predictionSchema.ParametersSchemaUri = req.Inputs.ModelPredictionBehaviorSchemaURI
+	}
+
+	// Build container spec (consistent with model creation)
+	containerSpec := &aiplatformpb.ModelContainerSpec{
+		ImageUri: req.Inputs.ModelImageURL,
+		// TODO add args input parameter
+		Args: []string{
+			"--allow_precompilation=false",
+			"--disable_optimizer=true",
+			"--saved_model_tags='serve,tpu'",
+			"--use_tfrt=true",
 		},
+	}
+	if req.Inputs.PredictRoute != "" {
+		containerSpec.PredictRoute = req.Inputs.PredictRoute
+	}
+	if req.Inputs.HealthRoute != "" {
+		containerSpec.HealthRoute = req.Inputs.HealthRoute
+	}
+
+	updatedModel, err := modelClient.UpdateModel(ctx, &aiplatformpb.UpdateModelRequest{
+		Model: &aiplatformpb.Model{
+			Name:            req.State.ModelName,
+			DisplayName:     req.ID,                                           // Use resource ID as display name (consistent with creation)
+			Description:     "Uploaded model for " + req.Inputs.ModelImageURL, // Consistent with creation
+			Labels:          req.Inputs.Labels,
+			ArtifactUri:     req.Inputs.ModelArtifactsBucketURI,
+			ContainerSpec:   containerSpec,
+			PredictSchemata: predictionSchema,
+		},
+		UpdateMask: &fieldmaskpb.FieldMask{
+			Paths: updatePaths,
+		},
+	})
+	if err != nil {
+		return infer.UpdateResponse[VertexModelDeploymentState]{}, fmt.Errorf("failed to update model: %w", err)
+	}
+
+	// Create updated state with the response from the API
+	updatedState := VertexModelDeploymentState{
+		VertexModelDeploymentArgs: req.Inputs,
+		DeployedModelID:           req.State.DeployedModelID,
+		ModelName:                 updatedModel.Name,
+		EndpointName:              req.State.EndpointName,
+		CreateTime:                req.State.CreateTime,
+	}
+
+	// Update state fields from the updated model response
+	if updatedModel.Labels != nil {
+		updatedState.Labels = updatedModel.Labels
+	}
+
+	// Update ModelArtifactsBucketURI from the model response
+	if updatedModel.ArtifactUri != "" {
+		updatedState.ModelArtifactsBucketURI = updatedModel.ArtifactUri
+	}
+
+	// Update container spec fields if available
+	if updatedModel.ContainerSpec != nil {
+		if updatedModel.ContainerSpec.ImageUri != "" {
+			updatedState.ModelImageURL = updatedModel.ContainerSpec.ImageUri
+		}
+		if updatedModel.ContainerSpec.PredictRoute != "" {
+			updatedState.PredictRoute = updatedModel.ContainerSpec.PredictRoute
+		}
+		if updatedModel.ContainerSpec.HealthRoute != "" {
+			updatedState.HealthRoute = updatedModel.ContainerSpec.HealthRoute
+		}
+	}
+
+	// Update predict schemata fields if available
+	if updatedModel.PredictSchemata != nil {
+		if updatedModel.PredictSchemata.InstanceSchemaUri != "" {
+			updatedState.ModelPredictionInputSchemaURI = updatedModel.PredictSchemata.InstanceSchemaUri
+		}
+		if updatedModel.PredictSchemata.PredictionSchemaUri != "" {
+			updatedState.ModelPredictionOutputSchemaURI = updatedModel.PredictSchemata.PredictionSchemaUri
+		}
+		if updatedModel.PredictSchemata.ParametersSchemaUri != "" {
+			updatedState.ModelPredictionBehaviorSchemaURI = updatedModel.PredictSchemata.ParametersSchemaUri
+		}
+	}
+
+	// TODO update endpoint model deployment
+
+	return infer.UpdateResponse[VertexModelDeploymentState]{
+		Output: updatedState,
 	}, nil
 }
 
@@ -333,6 +495,7 @@ func readRegistryModel(ctx context.Context,
 	if model.PredictSchemata != nil {
 		state.ModelPredictionInputSchemaURI = model.PredictSchemata.InstanceSchemaUri
 		state.ModelPredictionOutputSchemaURI = model.PredictSchemata.PredictionSchemaUri
+		state.ModelPredictionBehaviorSchemaURI = model.PredictSchemata.ParametersSchemaUri
 	}
 
 	return nil
@@ -376,4 +539,17 @@ func toEndpointDeploymentConfig(args *EndpointModelDeploymentArgs) services.Endp
 // isEndpointDeploymentEnabled checks if endpoint deployment is configured
 func isEndpointDeploymentEnabled(args VertexModelDeploymentArgs) bool {
 	return args.EndpointModelDeployment != nil && args.EndpointModelDeployment.EndpointID != ""
+}
+
+// mapsEqual checks if two string maps are equal
+func mapsEqual(a, b map[string]string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for k, v := range a {
+		if b[k] != v {
+			return false
+		}
+	}
+	return true
 }

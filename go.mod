@@ -7,6 +7,7 @@ require (
 	github.com/googleapis/gax-go/v2 v2.15.0
 	github.com/pulumi/pulumi-go-provider v1.1.1
 	google.golang.org/api v0.249.0
+	google.golang.org/protobuf v1.36.8
 )
 
 require (
@@ -117,7 +118,6 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20250818200422-3122310a409c // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250818200422-3122310a409c // indirect
 	google.golang.org/grpc v1.75.0 // indirect
-	google.golang.org/protobuf v1.36.8 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	lukechampine.com/frand v1.5.1 // indirect

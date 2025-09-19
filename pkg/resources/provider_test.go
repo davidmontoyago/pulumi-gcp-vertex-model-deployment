@@ -329,6 +329,7 @@ type MockModelClient struct {
 	UploadModelFunc func(ctx context.Context, req *aiplatformpb.UploadModelRequest, opts ...gax.CallOption) (*aiplatform.UploadModelOperation, error)
 	DeleteModelFunc func(ctx context.Context, req *aiplatformpb.DeleteModelRequest, opts ...gax.CallOption) (*aiplatform.DeleteModelOperation, error)
 	GetModelFunc    func(ctx context.Context, req *aiplatformpb.GetModelRequest, opts ...gax.CallOption) (*aiplatformpb.Model, error)
+	UpdateModelFunc func(ctx context.Context, req *aiplatformpb.UpdateModelRequest, opts ...gax.CallOption) (*aiplatformpb.Model, error)
 	CloseFunc       func() error
 }
 
@@ -351,6 +352,14 @@ func (m *MockModelClient) DeleteModel(ctx context.Context, req *aiplatformpb.Del
 func (m *MockModelClient) GetModel(ctx context.Context, req *aiplatformpb.GetModelRequest, opts ...gax.CallOption) (*aiplatformpb.Model, error) {
 	if m.GetModelFunc != nil {
 		return m.GetModelFunc(ctx, req, opts...)
+	}
+
+	return nil, nil
+}
+
+func (m *MockModelClient) UpdateModel(ctx context.Context, req *aiplatformpb.UpdateModelRequest, opts ...gax.CallOption) (*aiplatformpb.Model, error) {
+	if m.UpdateModelFunc != nil {
+		return m.UpdateModelFunc(ctx, req, opts...)
 	}
 
 	return nil, nil
@@ -713,6 +722,274 @@ func TestVertexModelDeploymentRead_ModelOnly(t *testing.T) {
 	}
 	if result.Inputs.Region != region {
 		t.Errorf("Expected Inputs.Region %s, got %s", region, result.Inputs.Region)
+	}
+}
+
+//nolint:paralleltest,tparallel // Cannot run in parallel due to shared testFactoryRegistry
+func TestVertexModelDeploymentUpdate_ModelOnly(t *testing.T) {
+	ctx := context.Background()
+
+	// Test inputs for model update without endpoint deployment
+	projectID := testProjectID
+	region := testRegion
+	modelName := testModelName
+	createTime := testCreateTime
+	resourceName := "test-model-update-only"
+
+	// Original state values
+	originalModelImageURL := "gcr.io/test-project/old-model:v1"
+	originalModelArtifactsBucketURI := "gs://test-bucket/old-artifacts/"
+	originalModelPredictionInputSchemaURI := "gs://test-bucket/schemas/old_input_schema.json"
+	originalModelPredictionOutputSchemaURI := "gs://test-bucket/schemas/old_output_schema.json"
+	originalModelPredictionBehaviorSchemaURI := "gs://test-bucket/schemas/old_behavior_schema.json"
+	originalPredictRoute := "/v1/models/old:predict"
+	originalHealthRoute := "/v1/models/old:health"
+	originalLabels := map[string]string{"env": "dev", "version": "v1"}
+
+	// Updated input values
+	updatedModelImageURL := testModelImageURL
+	updatedModelArtifactsBucketURI := testModelArtifactsBucketURI
+	updatedModelPredictionInputSchemaURI := testModelPredictionInputSchemaURI
+	updatedModelPredictionOutputSchemaURI := testModelPredictionOutputSchemaURI
+	updatedModelPredictionBehaviorSchemaURI := "gs://test-bucket/schemas/updated_behavior_schema.json"
+	updatedPredictRoute := "/v1/models/custom:predict"
+	updatedHealthRoute := "/v1/models/custom:health"
+	updatedLabels := map[string]string{"env": "test", "component": "ml", "version": "v2"}
+
+	// Variables to capture request parameters
+	var capturedUpdateRequest *aiplatformpb.UpdateModelRequest
+
+	// Create initial state
+	initialState := VertexModelDeploymentState{
+		VertexModelDeploymentArgs: VertexModelDeploymentArgs{
+			ProjectID:                        projectID,
+			Region:                           region,
+			ModelImageURL:                    originalModelImageURL,
+			ModelArtifactsBucketURI:          originalModelArtifactsBucketURI,
+			ModelPredictionInputSchemaURI:    originalModelPredictionInputSchemaURI,
+			ModelPredictionOutputSchemaURI:   originalModelPredictionOutputSchemaURI,
+			ModelPredictionBehaviorSchemaURI: originalModelPredictionBehaviorSchemaURI,
+			PredictRoute:                     originalPredictRoute,
+			HealthRoute:                      originalHealthRoute,
+			Labels:                           originalLabels,
+			// EndpointModelDeployment is not set - model update only
+		},
+		ModelName:       modelName,
+		DeployedModelID: "", // Empty - no endpoint deployment
+		EndpointName:    "", // Empty - no endpoint deployment
+		CreateTime:      createTime,
+	}
+
+	// Create update request with new inputs
+	req := infer.UpdateRequest[VertexModelDeploymentArgs, VertexModelDeploymentState]{
+		ID:     resourceName,
+		DryRun: false,
+		State:  initialState,
+		Inputs: VertexModelDeploymentArgs{
+			ProjectID:                        projectID,
+			Region:                           region,
+			ModelImageURL:                    updatedModelImageURL,
+			ModelArtifactsBucketURI:          updatedModelArtifactsBucketURI,
+			ModelPredictionInputSchemaURI:    updatedModelPredictionInputSchemaURI,
+			ModelPredictionOutputSchemaURI:   updatedModelPredictionOutputSchemaURI,
+			ModelPredictionBehaviorSchemaURI: updatedModelPredictionBehaviorSchemaURI,
+			PredictRoute:                     updatedPredictRoute,
+			HealthRoute:                      updatedHealthRoute,
+			Labels:                           updatedLabels,
+			// EndpointModelDeployment is not set - model update only
+		},
+	}
+
+	// Mock updated model response
+	mockUpdatedModel := &aiplatformpb.Model{
+		Name:        modelName,
+		DisplayName: resourceName,
+		Description: "Uploaded model for " + updatedModelImageURL,
+		ArtifactUri: updatedModelArtifactsBucketURI,
+		ContainerSpec: &aiplatformpb.ModelContainerSpec{
+			ImageUri:     updatedModelImageURL,
+			PredictRoute: updatedPredictRoute,
+			HealthRoute:  updatedHealthRoute,
+		},
+		PredictSchemata: &aiplatformpb.PredictSchemata{
+			InstanceSchemaUri:   updatedModelPredictionInputSchemaURI,
+			PredictionSchemaUri: updatedModelPredictionOutputSchemaURI,
+			ParametersSchemaUri: updatedModelPredictionBehaviorSchemaURI,
+		},
+		Labels: updatedLabels,
+	}
+
+	modelClientFactory := MockModelClientFactory(&MockModelClient{
+		UpdateModelFunc: func(_ context.Context, req *aiplatformpb.UpdateModelRequest, _ ...gax.CallOption) (*aiplatformpb.Model, error) {
+			capturedUpdateRequest = req
+
+			return mockUpdatedModel, nil
+		},
+	})
+
+	// Endpoint client should not be called for model-only update
+	endpointClientFactory := MockEndpointClientFactory(&MockEndpointClient{
+		DeployModelFunc: func(_ context.Context, _ *aiplatformpb.DeployModelRequest, _ ...gax.CallOption) (*aiplatform.DeployModelOperation, error) {
+			t.Error("DeployModel should not be called for model-only update")
+
+			return nil, nil
+		},
+		UndeployModelFunc: func(_ context.Context, _ *aiplatformpb.UndeployModelRequest, _ ...gax.CallOption) (*aiplatform.UndeployModelOperation, error) {
+			t.Error("UndeployModel should not be called for model-only update")
+
+			return nil, nil
+		},
+	})
+
+	provider := &VertexModelDeployment{}
+	testFactoryRegistry.modelClientFactory = modelClientFactory
+	testFactoryRegistry.endpointClientFactory = endpointClientFactory
+
+	// Execute update
+	result, err := provider.Update(ctx, req)
+	if err != nil {
+		t.Fatalf("Expected nil error from mock, but got %v", err)
+	}
+
+	// Validate UpdateModelRequest was captured and has correct parameters
+	if capturedUpdateRequest == nil {
+		t.Fatal("UpdateModelRequest was not captured")
+	}
+
+	// Assert model name
+	if capturedUpdateRequest.Model.Name != modelName {
+		t.Errorf("Expected Model.Name %s, got %s", modelName, capturedUpdateRequest.Model.Name)
+	}
+
+	// Assert display name uses resource ID
+	if capturedUpdateRequest.Model.DisplayName != resourceName {
+		t.Errorf("Expected Model.DisplayName %s, got %s", resourceName, capturedUpdateRequest.Model.DisplayName)
+	}
+
+	// Assert description is consistent with creation
+	expectedDescription := "Uploaded model for " + updatedModelImageURL
+	if capturedUpdateRequest.Model.Description != expectedDescription {
+		t.Errorf("Expected Model.Description %s, got %s", expectedDescription, capturedUpdateRequest.Model.Description)
+	}
+
+	// Assert artifact URI
+	if capturedUpdateRequest.Model.ArtifactUri != updatedModelArtifactsBucketURI {
+		t.Errorf("Expected ArtifactUri %s, got %s", updatedModelArtifactsBucketURI, capturedUpdateRequest.Model.ArtifactUri)
+	}
+
+	// Assert container spec
+	if capturedUpdateRequest.Model.ContainerSpec == nil {
+		t.Fatal("ContainerSpec is nil")
+	}
+	if capturedUpdateRequest.Model.ContainerSpec.ImageUri != updatedModelImageURL {
+		t.Errorf("Expected ImageUri %s, got %s", updatedModelImageURL, capturedUpdateRequest.Model.ContainerSpec.ImageUri)
+	}
+	if capturedUpdateRequest.Model.ContainerSpec.PredictRoute != updatedPredictRoute {
+		t.Errorf("Expected PredictRoute %s, got %s", updatedPredictRoute, capturedUpdateRequest.Model.ContainerSpec.PredictRoute)
+	}
+	if capturedUpdateRequest.Model.ContainerSpec.HealthRoute != updatedHealthRoute {
+		t.Errorf("Expected HealthRoute %s, got %s", updatedHealthRoute, capturedUpdateRequest.Model.ContainerSpec.HealthRoute)
+	}
+
+	// Assert prediction schemas
+	if capturedUpdateRequest.Model.PredictSchemata == nil {
+		t.Fatal("PredictSchemata is nil")
+	}
+	if capturedUpdateRequest.Model.PredictSchemata.InstanceSchemaUri != updatedModelPredictionInputSchemaURI {
+		t.Errorf("Expected InstanceSchemaUri %s, got %s", updatedModelPredictionInputSchemaURI, capturedUpdateRequest.Model.PredictSchemata.InstanceSchemaUri)
+	}
+	if capturedUpdateRequest.Model.PredictSchemata.PredictionSchemaUri != updatedModelPredictionOutputSchemaURI {
+		t.Errorf("Expected PredictionSchemaUri %s, got %s", updatedModelPredictionOutputSchemaURI, capturedUpdateRequest.Model.PredictSchemata.PredictionSchemaUri)
+	}
+	if capturedUpdateRequest.Model.PredictSchemata.ParametersSchemaUri != updatedModelPredictionBehaviorSchemaURI {
+		t.Errorf("Expected ParametersSchemaUri %s, got %s", updatedModelPredictionBehaviorSchemaURI, capturedUpdateRequest.Model.PredictSchemata.ParametersSchemaUri)
+	}
+
+	// Assert labels
+	if len(capturedUpdateRequest.Model.Labels) != 3 {
+		t.Errorf("Expected 3 labels, got %d", len(capturedUpdateRequest.Model.Labels))
+	}
+	if capturedUpdateRequest.Model.Labels["env"] != "test" {
+		t.Errorf("Expected label env=test, got %s", capturedUpdateRequest.Model.Labels["env"])
+	}
+	if capturedUpdateRequest.Model.Labels["component"] != "ml" {
+		t.Errorf("Expected label component=ml, got %s", capturedUpdateRequest.Model.Labels["component"])
+	}
+	if capturedUpdateRequest.Model.Labels["version"] != "v2" {
+		t.Errorf("Expected label version=v2, got %s", capturedUpdateRequest.Model.Labels["version"])
+	}
+
+	// Assert update mask contains expected fields
+	if capturedUpdateRequest.UpdateMask == nil {
+		t.Fatal("UpdateMask is nil")
+	}
+	expectedPaths := []string{"labels", "description", "container_spec", "artifact_uri", "predict_schemata"}
+	if len(capturedUpdateRequest.UpdateMask.Paths) != len(expectedPaths) {
+		t.Errorf("Expected %d update paths, got %d", len(expectedPaths), len(capturedUpdateRequest.UpdateMask.Paths))
+	}
+	// Verify all expected paths are present (order doesn't matter)
+	pathsMap := make(map[string]bool)
+	for _, path := range capturedUpdateRequest.UpdateMask.Paths {
+		pathsMap[path] = true
+	}
+	for _, expectedPath := range expectedPaths {
+		if !pathsMap[expectedPath] {
+			t.Errorf("Expected update path %s not found in UpdateMask", expectedPath)
+		}
+	}
+
+	// Validate the returned state reflects the mock response
+	resultState := result.Output
+	if resultState.ModelName != modelName {
+		t.Errorf("Expected ModelName %s, got %s", modelName, resultState.ModelName)
+	}
+	if resultState.ModelImageURL != updatedModelImageURL {
+		t.Errorf("Expected ModelImageURL %s, got %s", updatedModelImageURL, resultState.ModelImageURL)
+	}
+	if resultState.ModelArtifactsBucketURI != updatedModelArtifactsBucketURI {
+		t.Errorf("Expected ModelArtifactsBucketURI %s, got %s", updatedModelArtifactsBucketURI, resultState.ModelArtifactsBucketURI)
+	}
+	if resultState.ModelPredictionInputSchemaURI != updatedModelPredictionInputSchemaURI {
+		t.Errorf("Expected ModelPredictionInputSchemaURI %s, got %s", updatedModelPredictionInputSchemaURI, resultState.ModelPredictionInputSchemaURI)
+	}
+	if resultState.ModelPredictionOutputSchemaURI != updatedModelPredictionOutputSchemaURI {
+		t.Errorf("Expected ModelPredictionOutputSchemaURI %s, got %s", updatedModelPredictionOutputSchemaURI, resultState.ModelPredictionOutputSchemaURI)
+	}
+	if resultState.ModelPredictionBehaviorSchemaURI != updatedModelPredictionBehaviorSchemaURI {
+		t.Errorf("Expected ModelPredictionBehaviorSchemaURI %s, got %s", updatedModelPredictionBehaviorSchemaURI, resultState.ModelPredictionBehaviorSchemaURI)
+	}
+	if resultState.PredictRoute != updatedPredictRoute {
+		t.Errorf("Expected PredictRoute %s, got %s", updatedPredictRoute, resultState.PredictRoute)
+	}
+	if resultState.HealthRoute != updatedHealthRoute {
+		t.Errorf("Expected HealthRoute %s, got %s", updatedHealthRoute, resultState.HealthRoute)
+	}
+
+	// Validate labels are updated from mock response
+	if len(resultState.Labels) != 3 {
+		t.Errorf("Expected 3 labels in result state, got %d", len(resultState.Labels))
+	}
+	if resultState.Labels["env"] != "test" {
+		t.Errorf("Expected result state label env=test, got %s", resultState.Labels["env"])
+	}
+	if resultState.Labels["component"] != "ml" {
+		t.Errorf("Expected result state label component=ml, got %s", resultState.Labels["component"])
+	}
+	if resultState.Labels["version"] != "v2" {
+		t.Errorf("Expected result state label version=v2, got %s", resultState.Labels["version"])
+	}
+
+	// Validate endpoint-related fields remain empty
+	if resultState.DeployedModelID != "" {
+		t.Errorf("Expected empty DeployedModelID for model-only update, got %s", resultState.DeployedModelID)
+	}
+	if resultState.EndpointName != "" {
+		t.Errorf("Expected empty EndpointName for model-only update, got %s", resultState.EndpointName)
+	}
+
+	// Validate original state fields are preserved
+	if resultState.CreateTime != createTime {
+		t.Errorf("Expected CreateTime %s, got %s", createTime, resultState.CreateTime)
 	}
 }
 

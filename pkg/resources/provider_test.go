@@ -24,6 +24,9 @@ const (
 	testEndpointPath                   = "projects/test-project/locations/us-central1/endpoints/test-endpoint"
 	testModelName                      = "projects/test-project/locations/us-central1/models/1234567890"
 	testCreateTime                     = "2023-10-15T10:30:00Z"
+	testEnv                            = "test"
+	testPredictRoute                   = "/v1/models/custom:predict"
+	testHealthRoute                    = "/v1/models/custom:health"
 )
 
 //nolint:paralleltest,tparallel // Cannot run in parallel due to shared testFactoryRegistry
@@ -69,7 +72,7 @@ func TestVertexModelDeploymentCreate_ModelUploadAndDeployRequests(t *testing.T) 
 				TrafficPercent: trafficPercent,
 			},
 			ServiceAccount: serviceAccount,
-			Labels:         map[string]string{"env": "test", "component": "ml"},
+			Labels:         map[string]string{"env": testEnv, "component": "ml"},
 		},
 	}
 
@@ -162,7 +165,7 @@ func TestVertexModelDeploymentCreate_ModelUploadAndDeployRequests(t *testing.T) 
 	if len(model.Labels) != 2 {
 		t.Errorf("Expected 2 labels, got %d", len(model.Labels))
 	}
-	if model.Labels["env"] != "test" {
+	if model.Labels["env"] != testEnv {
 		t.Errorf("Expected label env=test, got %s", model.Labels["env"])
 	}
 	if model.Labels["component"] != "ml" {
@@ -236,8 +239,8 @@ func TestVertexModelDeploymentCreate_ModelUploadOnly(t *testing.T) {
 	modelArtifactsBucketURI := testModelArtifactsBucketURI
 	modelPredictionInputSchemaURI := testModelPredictionInputSchemaURI
 	modelPredictionOutputSchemaURI := testModelPredictionOutputSchemaURI
-	predictRoute := "/v1/models/custom:predict"
-	healthRoute := "/v1/models/custom:health"
+	predictRoute := testPredictRoute
+	healthRoute := testHealthRoute
 	serviceAccount := "test-service-account@test-project.iam.gserviceaccount.com"
 	resourceName := "test-model-upload-only"
 
@@ -258,7 +261,7 @@ func TestVertexModelDeploymentCreate_ModelUploadOnly(t *testing.T) {
 			HealthRoute:                    healthRoute,
 			// EndpointModelDeployment is not set - model upload only
 			ServiceAccount: serviceAccount,
-			Labels:         map[string]string{"env": "test", "mode": "batch"},
+			Labels:         map[string]string{"env": testEnv, "mode": "batch"},
 		},
 	}
 
@@ -597,8 +600,8 @@ func TestVertexModelDeploymentRead_ModelOnly(t *testing.T) {
 	modelArtifactsBucketURI := testModelArtifactsBucketURI
 	modelPredictionInputSchemaURI := testModelPredictionInputSchemaURI
 	modelPredictionOutputSchemaURI := testModelPredictionOutputSchemaURI
-	predictRoute := "/v1/models/custom:predict"
-	healthRoute := "/v1/models/custom:health"
+	predictRoute := testPredictRoute
+	healthRoute := testHealthRoute
 	createTime := testCreateTime
 
 	// Create initial state
@@ -631,7 +634,7 @@ func TestVertexModelDeploymentRead_ModelOnly(t *testing.T) {
 			InstanceSchemaUri:   modelPredictionInputSchemaURI,
 			PredictionSchemaUri: modelPredictionOutputSchemaURI,
 		},
-		Labels: map[string]string{"env": "test", "component": "ml"},
+		Labels: map[string]string{"env": testEnv, "component": "ml"},
 	}
 
 	req := infer.ReadRequest[VertexModelDeploymentArgs, VertexModelDeploymentState]{
@@ -712,7 +715,7 @@ func TestVertexModelDeploymentRead_ModelOnly(t *testing.T) {
 	if len(resultState.Labels) != 2 {
 		t.Errorf("Expected 2 labels, got %d", len(resultState.Labels))
 	}
-	if resultState.Labels["env"] != "test" {
+	if resultState.Labels["env"] != testEnv {
 		t.Errorf("Expected label env=test, got %s", resultState.Labels["env"])
 	}
 	if resultState.Labels["component"] != "ml" {
@@ -763,9 +766,9 @@ func TestVertexModelDeploymentUpdate_ModelOnly(t *testing.T) {
 	updatedModelPredictionInputSchemaURI := testModelPredictionInputSchemaURI
 	updatedModelPredictionOutputSchemaURI := testModelPredictionOutputSchemaURI
 	updatedModelPredictionBehaviorSchemaURI := "gs://test-bucket/schemas/updated_behavior_schema.json"
-	updatedPredictRoute := "/v1/models/custom:predict"
-	updatedHealthRoute := "/v1/models/custom:health"
-	updatedLabels := map[string]string{"env": "test", "component": "ml", "version": "v2"}
+	updatedPredictRoute := testPredictRoute
+	updatedHealthRoute := testHealthRoute
+	updatedLabels := map[string]string{"env": testEnv, "component": "ml", "version": "v2"}
 
 	// Variables to capture request parameters
 	var capturedUpdateRequest *aiplatformpb.UpdateModelRequest
@@ -920,7 +923,7 @@ func TestVertexModelDeploymentUpdate_ModelOnly(t *testing.T) {
 	if len(capturedUpdateRequest.Model.Labels) != 3 {
 		t.Errorf("Expected 3 labels, got %d", len(capturedUpdateRequest.Model.Labels))
 	}
-	if capturedUpdateRequest.Model.Labels["env"] != "test" {
+	if capturedUpdateRequest.Model.Labels["env"] != testEnv {
 		t.Errorf("Expected label env=test, got %s", capturedUpdateRequest.Model.Labels["env"])
 	}
 	if capturedUpdateRequest.Model.Labels["component"] != "ml" {
@@ -980,7 +983,7 @@ func TestVertexModelDeploymentUpdate_ModelOnly(t *testing.T) {
 	if len(resultState.Labels) != 3 {
 		t.Errorf("Expected 3 labels in result state, got %d", len(resultState.Labels))
 	}
-	if resultState.Labels["env"] != "test" {
+	if resultState.Labels["env"] != testEnv {
 		t.Errorf("Expected result state label env=test, got %s", resultState.Labels["env"])
 	}
 	if resultState.Labels["component"] != "ml" {

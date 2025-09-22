@@ -10,7 +10,6 @@ import (
 	"time"
 
 	p "github.com/pulumi/pulumi-go-provider"
-	provider "github.com/pulumi/pulumi-go-provider"
 	"github.com/pulumi/pulumi-go-provider/infer"
 
 	"github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment/pkg/services"
@@ -272,30 +271,37 @@ func (v VertexModelDeployment) Read(
 	state := req.State
 
 	// Always attempt to read the model if we have a model name
-	if req.State.ModelName != "" {
-		modelClientFactory := v.getModelClientFactory()
-		modelClient, err := modelClientFactory(ctx, req.State.Region)
-		if err != nil {
-			// If we can't create the client, don't assume the resource is gone
-			return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{},
-				fmt.Errorf("failed to create model client: %w", err)
+	if req.State.ModelName == "" {
+		return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{},
+			fmt.Errorf("model name is required in state to read the resource")
+	}
+
+	modelClientFactory := v.getModelClientFactory()
+	modelClient, err := modelClientFactory(ctx, req.State.Region)
+	if err != nil {
+		// If we can't create the client, don't assume the resource is gone
+		return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{},
+			fmt.Errorf("failed to create model client: %w", err)
+	}
+	defer func() {
+		if err := modelClient.Close(); err != nil {
+			log.Printf("failed to close model client: %v", err)
 		}
-		defer modelClient.Close()
+	}()
 
-		err = readRegistryModel(ctx, modelClient, req, &state)
-		if err != nil {
-			// Check if this is a "not found" error specifically
-			// If the model truly doesn't exist, return empty response
-			// Otherwise, return the error
-			if isResourceNotFoundError(err) {
-				slog.Warn("Model no longer exists", "modelName", req.State.ModelName)
+	err = readRegistryModel(ctx, modelClient, req, &state)
+	if err != nil {
+		// Check if this is a "not found" error specifically
+		// If the model truly doesn't exist, return empty response
+		// Otherwise, return the error
+		if isResourceNotFoundError(err) {
+			slog.Warn("Model no longer exists", "modelName", req.State.ModelName)
 
-				return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{}, nil
-			}
-
-			return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{},
-				fmt.Errorf("failed to read model from registry: %w", err)
+			return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{}, nil
 		}
+
+		return infer.ReadResponse[VertexModelDeploymentArgs, VertexModelDeploymentState]{},
+			fmt.Errorf("failed to read model from registry: %w", err)
 	}
 
 	if req.State.DeployedModelID != "" && req.State.EndpointName != "" {
@@ -327,13 +333,13 @@ func (v VertexModelDeployment) Read(
 
 // Diff implements the diff logic to control what changes require replacement vs update
 func (v VertexModelDeployment) Diff(
-	ctx context.Context,
+	_ context.Context,
 	req infer.DiffRequest[VertexModelDeploymentArgs, VertexModelDeploymentState],
 ) (p.DiffResponse, error) {
 
 	diff := p.DiffResponse{
 		HasChanges:   false,
-		DetailedDiff: make(map[string]provider.PropertyDiff),
+		DetailedDiff: make(map[string]p.PropertyDiff),
 	}
 
 	// Properties that require replacement (immutable)
@@ -499,21 +505,21 @@ func mapsEqual(a, b map[string]string) bool {
 }
 
 // endpointDeploymentEqual checks if two EndpointModelDeploymentArgs are equal
-func endpointDeploymentEqual(a, b *EndpointModelDeploymentArgs) bool {
+func endpointDeploymentEqual(inputDeployment, stateDeployment *EndpointModelDeploymentArgs) bool {
 	// Both nil
-	if a == nil && b == nil {
+	if inputDeployment == nil && stateDeployment == nil {
 		return true
 	}
 	// One nil, one not nil
-	if a == nil || b == nil {
+	if inputDeployment == nil || stateDeployment == nil {
 		return false
 	}
 	// Compare all fields
-	return a.EndpointID == b.EndpointID &&
-		a.MachineType == b.MachineType &&
-		a.MinReplicas == b.MinReplicas &&
-		a.MaxReplicas == b.MaxReplicas &&
-		a.TrafficPercent == b.TrafficPercent
+	return inputDeployment.EndpointID == stateDeployment.EndpointID &&
+		inputDeployment.MachineType == stateDeployment.MachineType &&
+		inputDeployment.MinReplicas == stateDeployment.MinReplicas &&
+		inputDeployment.MaxReplicas == stateDeployment.MaxReplicas &&
+		inputDeployment.TrafficPercent == stateDeployment.TrafficPercent
 }
 
 // isResourceNotFoundError detects if the error indicates the resource doesn't exist

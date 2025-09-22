@@ -54,6 +54,7 @@ func updateRegistryModel(ctx context.Context, req infer.UpdateRequest[VertexMode
 	if err != nil {
 		return nil, fmt.Errorf("failed to update model: %w", err)
 	}
+
 	return updatedModel, nil
 }
 
@@ -101,6 +102,7 @@ func setModelStateUpdates(req infer.UpdateRequest[VertexModelDeploymentArgs, Ver
 			updatedState.ModelPredictionBehaviorSchemaURI = updatedModel.PredictSchemata.ParametersSchemaUri
 		}
 	}
+
 	return updatedState
 }
 

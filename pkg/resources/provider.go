@@ -349,9 +349,9 @@ func (v VertexModelDeployment) Update(
 
 	// Update container spec fields if available
 	if updatedModel.ContainerSpec != nil {
-		if updatedModel.ContainerSpec.ImageUri != "" {
-			updatedState.ModelImageURL = updatedModel.ContainerSpec.ImageUri
-		}
+		// ImageUri is immutable, requires replacement.
+		// See: https://cloud.google.com/vertex-ai/docs/reference/rest/v1/ModelContainerSpec
+
 		if updatedModel.ContainerSpec.PredictRoute != "" {
 			updatedState.PredictRoute = updatedModel.ContainerSpec.PredictRoute
 		}
@@ -502,7 +502,9 @@ func (v VertexModelDeployment) Diff(
 	if req.Inputs.ModelImageURL != req.State.ModelImageURL {
 		diff.HasChanges = true
 		diff.DetailedDiff["modelImageUrl"] = p.PropertyDiff{
-			Kind:      p.Update,
+			// Image URL is immutable, requires replacement of the model resource
+			// See: https://cloud.google.com/vertex-ai/docs/reference/rest/v1/ModelContainerSpec
+			Kind:      p.UpdateReplace,
 			InputDiff: true,
 		}
 	}
@@ -516,30 +518,8 @@ func (v VertexModelDeployment) Diff(
 		}
 	}
 
-	// Check prediction schema URIs - these can be updated
-	if req.Inputs.ModelPredictionInputSchemaURI != req.State.ModelPredictionInputSchemaURI {
-		diff.HasChanges = true
-		diff.DetailedDiff["modelPredictionInputSchemaUri"] = p.PropertyDiff{
-			Kind:      p.Update,
-			InputDiff: true,
-		}
-	}
-
-	if req.Inputs.ModelPredictionOutputSchemaURI != req.State.ModelPredictionOutputSchemaURI {
-		diff.HasChanges = true
-		diff.DetailedDiff["modelPredictionOutputSchemaUri"] = p.PropertyDiff{
-			Kind:      p.Update,
-			InputDiff: true,
-		}
-	}
-
-	if req.Inputs.ModelPredictionBehaviorSchemaURI != req.State.ModelPredictionBehaviorSchemaURI {
-		diff.HasChanges = true
-		diff.DetailedDiff["modelPredictionBehaviorSchemaUri"] = p.PropertyDiff{
-			Kind:      p.Update,
-			InputDiff: true,
-		}
-	}
+	// Prediction schema URIs are immutable
+	// See: https://cloud.google.com/vertex-ai/docs/reference/rest/v1/PredictSchemata
 
 	// Check service account - this can be updated
 	if req.Inputs.ServiceAccount != req.State.ServiceAccount {
@@ -655,8 +635,12 @@ func readRegistryModel(ctx context.Context,
 		state.HealthRoute = model.ContainerSpec.HealthRoute
 	}
 
-	// Safely access PredictSchemata fields
+	// Read schema URIs if available.
 	if model.PredictSchemata != nil {
+		// These are immutable and should be ignored during updates.
+		// URI given on output will be immutable and probably different,
+		// including the URI scheme, than the one given on input.
+		// See: https://cloud.google.com/vertex-ai/docs/reference/rest/v1/PredictSchemata
 		state.ModelPredictionInputSchemaURI = model.PredictSchemata.InstanceSchemaUri
 		state.ModelPredictionOutputSchemaURI = model.PredictSchemata.PredictionSchemaUri
 		state.ModelPredictionBehaviorSchemaURI = model.PredictSchemata.ParametersSchemaUri

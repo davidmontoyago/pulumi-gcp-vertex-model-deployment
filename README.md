@@ -5,7 +5,7 @@
 
 Pulumi custom provider to upload a model to Vertex and optionally deploy it to a Vertex Endpoint.
 
-Upload and deploy a model from a Docker image to a Vertex endpoint:
+Upload and deploy a model with a Docker image to a Vertex endpoint:
 ```go
 modelArtifactsURI := pulumi.Sprintf("gs://%s/models/my-model", myArtifactsBucket.Name)
 modelImageURL := "us-docker.pkg.dev/vertex-ai/prediction/tf2-cpu.2-15:latest"

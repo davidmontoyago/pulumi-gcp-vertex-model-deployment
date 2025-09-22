@@ -10,53 +10,6 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
-func setModelStateUpdates(req infer.UpdateRequest[VertexModelDeploymentArgs, VertexModelDeploymentState], updatedModel *aiplatformpb.Model) VertexModelDeploymentState {
-	updatedState := VertexModelDeploymentState{
-		VertexModelDeploymentArgs: req.Inputs,
-		DeployedModelID:           req.State.DeployedModelID,
-		ModelName:                 updatedModel.Name,
-		EndpointName:              req.State.EndpointName,
-		CreateTime:                req.State.CreateTime,
-	}
-
-	// Update state fields from the updated model response
-	if updatedModel.Labels != nil {
-		updatedState.Labels = updatedModel.Labels
-	}
-
-	// Update ModelArtifactsBucketURI from the model response
-	if updatedModel.ArtifactUri != "" {
-		updatedState.ModelArtifactsBucketURI = updatedModel.ArtifactUri
-	}
-
-	// Update container spec fields if available
-	if updatedModel.ContainerSpec != nil {
-		// ImageUri is immutable, requires replacement.
-		// See: https://cloud.google.com/vertex-ai/docs/reference/rest/v1/ModelContainerSpec
-
-		if updatedModel.ContainerSpec.PredictRoute != "" {
-			updatedState.PredictRoute = updatedModel.ContainerSpec.PredictRoute
-		}
-		if updatedModel.ContainerSpec.HealthRoute != "" {
-			updatedState.HealthRoute = updatedModel.ContainerSpec.HealthRoute
-		}
-	}
-
-	// Update predict schemata fields if available
-	if updatedModel.PredictSchemata != nil {
-		if updatedModel.PredictSchemata.InstanceSchemaUri != "" {
-			updatedState.ModelPredictionInputSchemaURI = updatedModel.PredictSchemata.InstanceSchemaUri
-		}
-		if updatedModel.PredictSchemata.PredictionSchemaUri != "" {
-			updatedState.ModelPredictionOutputSchemaURI = updatedModel.PredictSchemata.PredictionSchemaUri
-		}
-		if updatedModel.PredictSchemata.ParametersSchemaUri != "" {
-			updatedState.ModelPredictionBehaviorSchemaURI = updatedModel.PredictSchemata.ParametersSchemaUri
-		}
-	}
-	return updatedState
-}
-
 func updateRegistryModel(ctx context.Context, req infer.UpdateRequest[VertexModelDeploymentArgs, VertexModelDeploymentState], modelClient services.VertexModelClient, updatePaths []string) (*aiplatformpb.Model, error) {
 	predictionSchema := &aiplatformpb.PredictSchemata{
 		InstanceSchemaUri:   req.Inputs.ModelPredictionInputSchemaURI,
@@ -102,6 +55,53 @@ func updateRegistryModel(ctx context.Context, req infer.UpdateRequest[VertexMode
 		return nil, fmt.Errorf("failed to update model: %w", err)
 	}
 	return updatedModel, nil
+}
+
+func setModelStateUpdates(req infer.UpdateRequest[VertexModelDeploymentArgs, VertexModelDeploymentState], updatedModel *aiplatformpb.Model) VertexModelDeploymentState {
+	updatedState := VertexModelDeploymentState{
+		VertexModelDeploymentArgs: req.Inputs,
+		DeployedModelID:           req.State.DeployedModelID,
+		ModelName:                 updatedModel.Name,
+		EndpointName:              req.State.EndpointName,
+		CreateTime:                req.State.CreateTime,
+	}
+
+	// Update state fields from the updated model response
+	if updatedModel.Labels != nil {
+		updatedState.Labels = updatedModel.Labels
+	}
+
+	// Update ModelArtifactsBucketURI from the model response
+	if updatedModel.ArtifactUri != "" {
+		updatedState.ModelArtifactsBucketURI = updatedModel.ArtifactUri
+	}
+
+	// Update container spec fields if available
+	if updatedModel.ContainerSpec != nil {
+		// ImageUri is immutable, requires replacement.
+		// See: https://cloud.google.com/vertex-ai/docs/reference/rest/v1/ModelContainerSpec
+
+		if updatedModel.ContainerSpec.PredictRoute != "" {
+			updatedState.PredictRoute = updatedModel.ContainerSpec.PredictRoute
+		}
+		if updatedModel.ContainerSpec.HealthRoute != "" {
+			updatedState.HealthRoute = updatedModel.ContainerSpec.HealthRoute
+		}
+	}
+
+	// Update predict schemata fields if available
+	if updatedModel.PredictSchemata != nil {
+		if updatedModel.PredictSchemata.InstanceSchemaUri != "" {
+			updatedState.ModelPredictionInputSchemaURI = updatedModel.PredictSchemata.InstanceSchemaUri
+		}
+		if updatedModel.PredictSchemata.PredictionSchemaUri != "" {
+			updatedState.ModelPredictionOutputSchemaURI = updatedModel.PredictSchemata.PredictionSchemaUri
+		}
+		if updatedModel.PredictSchemata.ParametersSchemaUri != "" {
+			updatedState.ModelPredictionBehaviorSchemaURI = updatedModel.PredictSchemata.ParametersSchemaUri
+		}
+	}
+	return updatedState
 }
 
 func collectUpdates(req infer.UpdateRequest[VertexModelDeploymentArgs, VertexModelDeploymentState]) (bool, []string) {

@@ -7,7 +7,7 @@ require (
 	github.com/googleapis/gax-go/v2 v2.15.0
 	github.com/pulumi/pulumi-go-provider v1.1.1
 	google.golang.org/api v0.249.0
-	google.golang.org/protobuf v1.36.8
+	google.golang.org/protobuf v1.36.9
 )
 
 require (

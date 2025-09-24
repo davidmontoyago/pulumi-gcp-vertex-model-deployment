@@ -110,6 +110,9 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     needs: build-and-test
+    permissions:
+      contents: write # for sbom-action artifact uploads
+      actions: read # to find workflow artifacts when attaching release assets
 
     steps:
       - name: Checkout code

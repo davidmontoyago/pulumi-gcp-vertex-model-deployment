@@ -1,9 +1,9 @@
 GOOS							?= $${GOOS:-linux}
 GOARCH						?= $${GOARCH:-amd64}
-PROVIDER_VERSION	?= $${PROVIDER_VERSION:-0.0.0}
+PROVIDER_VERSION	?= $${PROVIDER_VERSION:-v0.0.0}
 PROVIDER_NAME			:= gcp-vertex-model-deployment
 PROVIDER_PATH			:= github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment
-PLUGIN_NAME				:= pulumi-resource-$(PROVIDER_NAME)-v$(PROVIDER_VERSION)-$(GOOS)-$(GOARCH)
+PLUGIN_NAME				:= pulumi-resource-$(PROVIDER_NAME)-$(PROVIDER_VERSION)-$(GOOS)-$(GOARCH)
 
 .PHONY: build clean test lint
 
@@ -40,7 +40,7 @@ gen-sdk: build
 
 plugin-local: plugin
 	@echo "Installing provider..."
-	pulumi plugin install resource gcp-vertex-model-deployment v$(PROVIDER_VERSION) --file ./build/$(PLUGIN_NAME)
+	pulumi plugin install resource gcp-vertex-model-deployment $(PROVIDER_VERSION) --file ./build/$(PLUGIN_NAME)
 	@echo "Plugin installed successfully"
 
 plugin: gen-sdk
@@ -48,7 +48,7 @@ plugin: gen-sdk
 		mkdir -p ./build && \
 		echo "Building $(PROVIDER_NAME) with version $(PROVIDER_VERSION): $(PLUGIN_NAME)" && \
 		CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build -trimpath \
-			-ldflags "-s -w -X $(PROVIDER_PATH)/pkg/version.Version=v$(PROVIDER_VERSION)" \
+			-ldflags "-s -w -X $(PROVIDER_PATH)/pkg/version.Version=$(PROVIDER_VERSION)" \
 			-o ./build/$(PLUGIN_NAME) ./cmd
 	@echo "Plugin built successfully"
 	@echo "Compressing..."

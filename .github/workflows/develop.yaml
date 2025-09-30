@@ -175,7 +175,7 @@ jobs:
                 if [ -f "$file" ]; then
                   filename=$(basename "$file")
                   echo "Uploading $filename"
-                  gh release upload "$tag" "$file" --repo="$GITHUB_REPOSITORY"
+                  gh release upload "$tag" "$file" --clobber --repo="$GITHUB_REPOSITORY"
                 fi
               done
             fi

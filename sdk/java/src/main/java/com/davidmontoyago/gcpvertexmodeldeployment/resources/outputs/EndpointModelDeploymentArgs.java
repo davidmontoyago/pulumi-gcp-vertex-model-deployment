@@ -14,6 +14,16 @@ import javax.annotation.Nullable;
 @CustomType
 public final class EndpointModelDeploymentArgs {
     /**
+     * @return Accelerator count for deployment
+     * 
+     */
+    private @Nullable Integer acceleratorCount;
+    /**
+     * @return Accelerator type for endpoint deployment. Defaults to ACCELERATOR_TYPE_UNSPECIFIED. E.g.: NVIDIA_TESLA_P4, NVIDIA_TESLA_T4
+     * 
+     */
+    private @Nullable String acceleratorType;
+    /**
      * @return Vertex AI Endpoint ID
      * 
      */
@@ -40,6 +50,20 @@ public final class EndpointModelDeploymentArgs {
     private @Nullable Integer trafficPercent;
 
     private EndpointModelDeploymentArgs() {}
+    /**
+     * @return Accelerator count for deployment
+     * 
+     */
+    public Optional<Integer> acceleratorCount() {
+        return Optional.ofNullable(this.acceleratorCount);
+    }
+    /**
+     * @return Accelerator type for endpoint deployment. Defaults to ACCELERATOR_TYPE_UNSPECIFIED. E.g.: NVIDIA_TESLA_P4, NVIDIA_TESLA_T4
+     * 
+     */
+    public Optional<String> acceleratorType() {
+        return Optional.ofNullable(this.acceleratorType);
+    }
     /**
      * @return Vertex AI Endpoint ID
      * 
@@ -85,6 +109,8 @@ public final class EndpointModelDeploymentArgs {
     }
     @CustomType.Builder
     public static final class Builder {
+        private @Nullable Integer acceleratorCount;
+        private @Nullable String acceleratorType;
         private String endpointId;
         private @Nullable String machineType;
         private @Nullable Integer maxReplicas;
@@ -93,6 +119,8 @@ public final class EndpointModelDeploymentArgs {
         public Builder() {}
         public Builder(EndpointModelDeploymentArgs defaults) {
     	      Objects.requireNonNull(defaults);
+    	      this.acceleratorCount = defaults.acceleratorCount;
+    	      this.acceleratorType = defaults.acceleratorType;
     	      this.endpointId = defaults.endpointId;
     	      this.machineType = defaults.machineType;
     	      this.maxReplicas = defaults.maxReplicas;
@@ -100,6 +128,18 @@ public final class EndpointModelDeploymentArgs {
     	      this.trafficPercent = defaults.trafficPercent;
         }
 
+        @CustomType.Setter
+        public Builder acceleratorCount(@Nullable Integer acceleratorCount) {
+
+            this.acceleratorCount = acceleratorCount;
+            return this;
+        }
+        @CustomType.Setter
+        public Builder acceleratorType(@Nullable String acceleratorType) {
+
+            this.acceleratorType = acceleratorType;
+            return this;
+        }
         @CustomType.Setter
         public Builder endpointId(String endpointId) {
             if (endpointId == null) {
@@ -134,6 +174,8 @@ public final class EndpointModelDeploymentArgs {
         }
         public EndpointModelDeploymentArgs build() {
             final var _resultValue = new EndpointModelDeploymentArgs();
+            _resultValue.acceleratorCount = acceleratorCount;
+            _resultValue.acceleratorType = acceleratorType;
             _resultValue.endpointId = endpointId;
             _resultValue.machineType = machineType;
             _resultValue.maxReplicas = maxReplicas;

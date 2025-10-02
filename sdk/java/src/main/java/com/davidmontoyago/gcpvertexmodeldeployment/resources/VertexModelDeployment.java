@@ -102,14 +102,14 @@ public class VertexModelDeployment extends com.pulumi.resources.CustomResource {
      * 
      */
     @Export(name="modelArtifactsBucketUri", refs={String.class}, tree="[0]")
-    private Output<String> modelArtifactsBucketUri;
+    private Output</* @Nullable */ String> modelArtifactsBucketUri;
 
     /**
      * @return Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
      * 
      */
-    public Output<String> modelArtifactsBucketUri() {
-        return this.modelArtifactsBucketUri;
+    public Output<Optional<String>> modelArtifactsBucketUri() {
+        return Codegen.optional(this.modelArtifactsBucketUri);
     }
     /**
      * Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers
@@ -150,28 +150,28 @@ public class VertexModelDeployment extends com.pulumi.resources.CustomResource {
      * 
      */
     @Export(name="modelPredictionInputSchemaUri", refs={String.class}, tree="[0]")
-    private Output<String> modelPredictionInputSchemaUri;
+    private Output</* @Nullable */ String> modelPredictionInputSchemaUri;
 
     /**
      * @return Bucket URI to the schema for the model input
      * 
      */
-    public Output<String> modelPredictionInputSchemaUri() {
-        return this.modelPredictionInputSchemaUri;
+    public Output<Optional<String>> modelPredictionInputSchemaUri() {
+        return Codegen.optional(this.modelPredictionInputSchemaUri);
     }
     /**
      * Bucket URI to the schema for the model output
      * 
      */
     @Export(name="modelPredictionOutputSchemaUri", refs={String.class}, tree="[0]")
-    private Output<String> modelPredictionOutputSchemaUri;
+    private Output</* @Nullable */ String> modelPredictionOutputSchemaUri;
 
     /**
      * @return Bucket URI to the schema for the model output
      * 
      */
-    public Output<String> modelPredictionOutputSchemaUri() {
-        return this.modelPredictionOutputSchemaUri;
+    public Output<Optional<String>> modelPredictionOutputSchemaUri() {
+        return Codegen.optional(this.modelPredictionOutputSchemaUri);
     }
     @Export(name="predictRoute", refs={String.class}, tree="[0]")
     private Output</* @Nullable */ String> predictRoute;

@@ -27,6 +27,14 @@ if not MYPY:
         """
         Vertex AI Endpoint ID
         """
+        accelerator_count: NotRequired[pulumi.Input[_builtins.int]]
+        """
+        Accelerator count for deployment
+        """
+        accelerator_type: NotRequired[pulumi.Input[_builtins.str]]
+        """
+        Accelerator type for endpoint deployment. Defaults to ACCELERATOR_TYPE_UNSPECIFIED. E.g.: NVIDIA_TESLA_P4, NVIDIA_TESLA_T4
+        """
         machine_type: NotRequired[pulumi.Input[_builtins.str]]
         """
         Machine type for deployment
@@ -50,20 +58,28 @@ elif False:
 class EndpointModelDeploymentArgsArgs:
     def __init__(__self__, *,
                  endpoint_id: pulumi.Input[_builtins.str],
+                 accelerator_count: Optional[pulumi.Input[_builtins.int]] = None,
+                 accelerator_type: Optional[pulumi.Input[_builtins.str]] = None,
                  machine_type: Optional[pulumi.Input[_builtins.str]] = None,
                  max_replicas: Optional[pulumi.Input[_builtins.int]] = None,
                  min_replicas: Optional[pulumi.Input[_builtins.int]] = None,
                  traffic_percent: Optional[pulumi.Input[_builtins.int]] = None):
         """
         :param pulumi.Input[_builtins.str] endpoint_id: Vertex AI Endpoint ID
+        :param pulumi.Input[_builtins.int] accelerator_count: Accelerator count for deployment
+        :param pulumi.Input[_builtins.str] accelerator_type: Accelerator type for endpoint deployment. Defaults to ACCELERATOR_TYPE_UNSPECIFIED. E.g.: NVIDIA_TESLA_P4, NVIDIA_TESLA_T4
         :param pulumi.Input[_builtins.str] machine_type: Machine type for deployment
         :param pulumi.Input[_builtins.int] max_replicas: Maximum number of replicas
         :param pulumi.Input[_builtins.int] min_replicas: Minimum number of replicas
         :param pulumi.Input[_builtins.int] traffic_percent: Traffic percentage for this deployment
         """
         pulumi.set(__self__, "endpoint_id", endpoint_id)
+        if accelerator_count is not None:
+            pulumi.set(__self__, "accelerator_count", accelerator_count)
+        if accelerator_type is not None:
+            pulumi.set(__self__, "accelerator_type", accelerator_type)
         if machine_type is None:
-            machine_type = 'n1-standard-2'
+            machine_type = 'n1-standard-8'
         if machine_type is not None:
             pulumi.set(__self__, "machine_type", machine_type)
         if max_replicas is None:
@@ -90,6 +106,30 @@ class EndpointModelDeploymentArgsArgs:
     @endpoint_id.setter
     def endpoint_id(self, value: pulumi.Input[_builtins.str]):
         pulumi.set(self, "endpoint_id", value)
+
+    @_builtins.property
+    @pulumi.getter(name="acceleratorCount")
+    def accelerator_count(self) -> Optional[pulumi.Input[_builtins.int]]:
+        """
+        Accelerator count for deployment
+        """
+        return pulumi.get(self, "accelerator_count")
+
+    @accelerator_count.setter
+    def accelerator_count(self, value: Optional[pulumi.Input[_builtins.int]]):
+        pulumi.set(self, "accelerator_count", value)
+
+    @_builtins.property
+    @pulumi.getter(name="acceleratorType")
+    def accelerator_type(self) -> Optional[pulumi.Input[_builtins.str]]:
+        """
+        Accelerator type for endpoint deployment. Defaults to ACCELERATOR_TYPE_UNSPECIFIED. E.g.: NVIDIA_TESLA_P4, NVIDIA_TESLA_T4
+        """
+        return pulumi.get(self, "accelerator_type")
+
+    @accelerator_type.setter
+    def accelerator_type(self, value: Optional[pulumi.Input[_builtins.str]]):
+        pulumi.set(self, "accelerator_type", value)
 
     @_builtins.property
     @pulumi.getter(name="machineType")

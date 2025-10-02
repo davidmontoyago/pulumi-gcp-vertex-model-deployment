@@ -14,6 +14,10 @@ import (
 var _ = internal.GetEnvOrDefault
 
 type EndpointModelDeploymentArgs struct {
+	// Accelerator count for deployment
+	AcceleratorCount *int `pulumi:"acceleratorCount"`
+	// Accelerator type for endpoint deployment. Defaults to ACCELERATOR_TYPE_UNSPECIFIED. E.g.: NVIDIA_TESLA_P4, NVIDIA_TESLA_T4
+	AcceleratorType *string `pulumi:"acceleratorType"`
 	// Vertex AI Endpoint ID
 	EndpointId string `pulumi:"endpointId"`
 	// Machine type for deployment
@@ -33,7 +37,7 @@ func (val *EndpointModelDeploymentArgs) Defaults() *EndpointModelDeploymentArgs 
 	}
 	tmp := *val
 	if tmp.MachineType == nil {
-		machineType_ := "n1-standard-2"
+		machineType_ := "n1-standard-8"
 		tmp.MachineType = &machineType_
 	}
 	if tmp.MaxReplicas == nil {
@@ -63,6 +67,10 @@ type EndpointModelDeploymentArgsInput interface {
 }
 
 type EndpointModelDeploymentArgsArgs struct {
+	// Accelerator count for deployment
+	AcceleratorCount pulumi.IntPtrInput `pulumi:"acceleratorCount"`
+	// Accelerator type for endpoint deployment. Defaults to ACCELERATOR_TYPE_UNSPECIFIED. E.g.: NVIDIA_TESLA_P4, NVIDIA_TESLA_T4
+	AcceleratorType pulumi.StringPtrInput `pulumi:"acceleratorType"`
 	// Vertex AI Endpoint ID
 	EndpointId pulumi.StringInput `pulumi:"endpointId"`
 	// Machine type for deployment
@@ -82,7 +90,7 @@ func (val *EndpointModelDeploymentArgsArgs) Defaults() *EndpointModelDeploymentA
 	}
 	tmp := *val
 	if tmp.MachineType == nil {
-		tmp.MachineType = pulumi.StringPtr("n1-standard-2")
+		tmp.MachineType = pulumi.StringPtr("n1-standard-8")
 	}
 	if tmp.MaxReplicas == nil {
 		tmp.MaxReplicas = pulumi.IntPtr(3)
@@ -172,6 +180,16 @@ func (o EndpointModelDeploymentArgsOutput) ToEndpointModelDeploymentArgsPtrOutpu
 	}).(EndpointModelDeploymentArgsPtrOutput)
 }
 
+// Accelerator count for deployment
+func (o EndpointModelDeploymentArgsOutput) AcceleratorCount() pulumi.IntPtrOutput {
+	return o.ApplyT(func(v EndpointModelDeploymentArgs) *int { return v.AcceleratorCount }).(pulumi.IntPtrOutput)
+}
+
+// Accelerator type for endpoint deployment. Defaults to ACCELERATOR_TYPE_UNSPECIFIED. E.g.: NVIDIA_TESLA_P4, NVIDIA_TESLA_T4
+func (o EndpointModelDeploymentArgsOutput) AcceleratorType() pulumi.StringPtrOutput {
+	return o.ApplyT(func(v EndpointModelDeploymentArgs) *string { return v.AcceleratorType }).(pulumi.StringPtrOutput)
+}
+
 // Vertex AI Endpoint ID
 func (o EndpointModelDeploymentArgsOutput) EndpointId() pulumi.StringOutput {
 	return o.ApplyT(func(v EndpointModelDeploymentArgs) string { return v.EndpointId }).(pulumi.StringOutput)
@@ -219,6 +237,26 @@ func (o EndpointModelDeploymentArgsPtrOutput) Elem() EndpointModelDeploymentArgs
 		var ret EndpointModelDeploymentArgs
 		return ret
 	}).(EndpointModelDeploymentArgsOutput)
+}
+
+// Accelerator count for deployment
+func (o EndpointModelDeploymentArgsPtrOutput) AcceleratorCount() pulumi.IntPtrOutput {
+	return o.ApplyT(func(v *EndpointModelDeploymentArgs) *int {
+		if v == nil {
+			return nil
+		}
+		return v.AcceleratorCount
+	}).(pulumi.IntPtrOutput)
+}
+
+// Accelerator type for endpoint deployment. Defaults to ACCELERATOR_TYPE_UNSPECIFIED. E.g.: NVIDIA_TESLA_P4, NVIDIA_TESLA_T4
+func (o EndpointModelDeploymentArgsPtrOutput) AcceleratorType() pulumi.StringPtrOutput {
+	return o.ApplyT(func(v *EndpointModelDeploymentArgs) *string {
+		if v == nil {
+			return nil
+		}
+		return v.AcceleratorType
+	}).(pulumi.StringPtrOutput)
 }
 
 // Vertex AI Endpoint ID

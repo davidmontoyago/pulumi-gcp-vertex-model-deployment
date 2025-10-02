@@ -14,6 +14,18 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources.Inputs
     public sealed class EndpointModelDeploymentArgsArgs : global::Pulumi.ResourceArgs
     {
         /// <summary>
+        /// Accelerator count for deployment
+        /// </summary>
+        [Input("acceleratorCount")]
+        public Input<int>? AcceleratorCount { get; set; }
+
+        /// <summary>
+        /// Accelerator type for endpoint deployment. Defaults to ACCELERATOR_TYPE_UNSPECIFIED. E.g.: NVIDIA_TESLA_P4, NVIDIA_TESLA_T4
+        /// </summary>
+        [Input("acceleratorType")]
+        public Input<string>? AcceleratorType { get; set; }
+
+        /// <summary>
         /// Vertex AI Endpoint ID
         /// </summary>
         [Input("endpointId", required: true)]
@@ -45,7 +57,7 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources.Inputs
 
         public EndpointModelDeploymentArgsArgs()
         {
-            MachineType = "n1-standard-2";
+            MachineType = "n1-standard-8";
             MaxReplicas = 3;
             MinReplicas = 1;
             TrafficPercent = 100;

@@ -10,6 +10,14 @@ import * as utilities from "../utilities";
 export namespace resources {
     export interface EndpointModelDeploymentArgs {
         /**
+         * Accelerator count for deployment
+         */
+        acceleratorCount?: number;
+        /**
+         * Accelerator type for endpoint deployment. Defaults to ACCELERATOR_TYPE_UNSPECIFIED. E.g.: NVIDIA_TESLA_P4, NVIDIA_TESLA_T4
+         */
+        acceleratorType?: string;
+        /**
          * Vertex AI Endpoint ID
          */
         endpointId: string;
@@ -36,7 +44,7 @@ export namespace resources {
     export function endpointModelDeploymentArgsProvideDefaults(val: EndpointModelDeploymentArgs): EndpointModelDeploymentArgs {
         return {
             ...val,
-            machineType: (val.machineType) ?? "n1-standard-2",
+            machineType: (val.machineType) ?? "n1-standard-8",
             maxReplicas: (val.maxReplicas) ?? 3,
             minReplicas: (val.minReplicas) ?? 1,
             trafficPercent: (val.trafficPercent) ?? 100,

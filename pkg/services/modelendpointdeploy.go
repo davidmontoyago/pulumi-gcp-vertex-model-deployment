@@ -11,11 +11,13 @@ import (
 
 // EndpointModelDeploymentConfig holds configuration for deploying a model to an endpoint.
 type EndpointModelDeploymentConfig struct {
-	EndpointID     string
-	MachineType    string
-	MinReplicas    int32
-	MaxReplicas    int32
-	TrafficPercent int32
+	EndpointID       string
+	MachineType      string
+	AcceleratorType  string
+	AcceleratorCount int32
+	MinReplicas      int32
+	MaxReplicas      int32
+	TrafficPercent   int32
 }
 
 // ModelDeployer interface defines operations for deploying models.
@@ -50,7 +52,9 @@ func (d *VertexModelDeploy) Deploy(ctx context.Context, modelName, displayName, 
 		PredictionResources: &aiplatformpb.DeployedModel_DedicatedResources{
 			DedicatedResources: &aiplatformpb.DedicatedResources{
 				MachineSpec: &aiplatformpb.MachineSpec{
-					MachineType: endpointConfig.MachineType,
+					MachineType:      endpointConfig.MachineType,
+					AcceleratorType:  aiplatformpb.AcceleratorType(aiplatformpb.AcceleratorType_value[endpointConfig.AcceleratorType]),
+					AcceleratorCount: endpointConfig.AcceleratorCount,
 				},
 				MinReplicaCount: endpointConfig.MinReplicas,
 				MaxReplicaCount: endpointConfig.MaxReplicas,

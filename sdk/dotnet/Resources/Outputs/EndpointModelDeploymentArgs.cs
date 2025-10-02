@@ -15,6 +15,14 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources.Outputs
     public sealed class EndpointModelDeploymentArgs
     {
         /// <summary>
+        /// Accelerator count for deployment
+        /// </summary>
+        public readonly int? AcceleratorCount;
+        /// <summary>
+        /// Accelerator type for endpoint deployment. Defaults to ACCELERATOR_TYPE_UNSPECIFIED. E.g.: NVIDIA_TESLA_P4, NVIDIA_TESLA_T4
+        /// </summary>
+        public readonly string? AcceleratorType;
+        /// <summary>
         /// Vertex AI Endpoint ID
         /// </summary>
         public readonly string EndpointId;
@@ -37,6 +45,10 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources.Outputs
 
         [OutputConstructor]
         private EndpointModelDeploymentArgs(
+            int? acceleratorCount,
+
+            string? acceleratorType,
+
             string endpointId,
 
             string? machineType,
@@ -47,6 +59,8 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources.Outputs
 
             int? trafficPercent)
         {
+            AcceleratorCount = acceleratorCount;
+            AcceleratorType = acceleratorType;
             EndpointId = endpointId;
             MachineType = machineType;
             MaxReplicas = maxReplicas;

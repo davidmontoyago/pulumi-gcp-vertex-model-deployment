@@ -60,7 +60,7 @@ export class VertexModelDeployment extends pulumi.CustomResource {
     /**
      * Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
      */
-    public readonly modelArtifactsBucketUri!: pulumi.Output<string>;
+    public readonly modelArtifactsBucketUri!: pulumi.Output<string | undefined>;
     /**
      * Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers
      */
@@ -73,11 +73,11 @@ export class VertexModelDeployment extends pulumi.CustomResource {
     /**
      * Bucket URI to the schema for the model input
      */
-    public readonly modelPredictionInputSchemaUri!: pulumi.Output<string>;
+    public readonly modelPredictionInputSchemaUri!: pulumi.Output<string | undefined>;
     /**
      * Bucket URI to the schema for the model output
      */
-    public readonly modelPredictionOutputSchemaUri!: pulumi.Output<string>;
+    public readonly modelPredictionOutputSchemaUri!: pulumi.Output<string | undefined>;
     public readonly predictRoute!: pulumi.Output<string | undefined>;
     /**
      * Google Cloud Project ID
@@ -103,17 +103,8 @@ export class VertexModelDeployment extends pulumi.CustomResource {
         let resourceInputs: pulumi.Inputs = {};
         opts = opts || {};
         if (!opts.id) {
-            if ((!args || args.modelArtifactsBucketUri === undefined) && !opts.urn) {
-                throw new Error("Missing required property 'modelArtifactsBucketUri'");
-            }
             if ((!args || args.modelImageUrl === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'modelImageUrl'");
-            }
-            if ((!args || args.modelPredictionInputSchemaUri === undefined) && !opts.urn) {
-                throw new Error("Missing required property 'modelPredictionInputSchemaUri'");
-            }
-            if ((!args || args.modelPredictionOutputSchemaUri === undefined) && !opts.urn) {
-                throw new Error("Missing required property 'modelPredictionOutputSchemaUri'");
             }
             if ((!args || args.projectId === undefined) && !opts.urn) {
                 throw new Error("Missing required property 'projectId'");
@@ -179,7 +170,7 @@ export interface VertexModelDeploymentArgs {
     /**
      * Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
      */
-    modelArtifactsBucketUri: pulumi.Input<string>;
+    modelArtifactsBucketUri?: pulumi.Input<string>;
     /**
      * Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers
      */
@@ -191,11 +182,11 @@ export interface VertexModelDeploymentArgs {
     /**
      * Bucket URI to the schema for the model input
      */
-    modelPredictionInputSchemaUri: pulumi.Input<string>;
+    modelPredictionInputSchemaUri?: pulumi.Input<string>;
     /**
      * Bucket URI to the schema for the model output
      */
-    modelPredictionOutputSchemaUri: pulumi.Input<string>;
+    modelPredictionOutputSchemaUri?: pulumi.Input<string>;
     predictRoute?: pulumi.Input<string>;
     /**
      * Google Cloud Project ID

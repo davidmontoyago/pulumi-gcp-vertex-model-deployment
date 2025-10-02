@@ -21,35 +21,32 @@ __all__ = ['VertexModelDeploymentArgs', 'VertexModelDeployment']
 @pulumi.input_type
 class VertexModelDeploymentArgs:
     def __init__(__self__, *,
-                 model_artifacts_bucket_uri: pulumi.Input[_builtins.str],
                  model_image_url: pulumi.Input[_builtins.str],
-                 model_prediction_input_schema_uri: pulumi.Input[_builtins.str],
-                 model_prediction_output_schema_uri: pulumi.Input[_builtins.str],
                  project_id: pulumi.Input[_builtins.str],
                  region: pulumi.Input[_builtins.str],
                  service_account: pulumi.Input[_builtins.str],
                  endpoint_model_deployment: Optional[pulumi.Input['EndpointModelDeploymentArgsArgs']] = None,
                  health_route: Optional[pulumi.Input[_builtins.str]] = None,
                  labels: Optional[pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]]] = None,
+                 model_artifacts_bucket_uri: Optional[pulumi.Input[_builtins.str]] = None,
                  model_prediction_behavior_schema_uri: Optional[pulumi.Input[_builtins.str]] = None,
+                 model_prediction_input_schema_uri: Optional[pulumi.Input[_builtins.str]] = None,
+                 model_prediction_output_schema_uri: Optional[pulumi.Input[_builtins.str]] = None,
                  predict_route: Optional[pulumi.Input[_builtins.str]] = None):
         """
         The set of arguments for constructing a VertexModelDeployment resource.
-        :param pulumi.Input[_builtins.str] model_artifacts_bucket_uri: Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
         :param pulumi.Input[_builtins.str] model_image_url: Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers
-        :param pulumi.Input[_builtins.str] model_prediction_input_schema_uri: Bucket URI to the schema for the model input
-        :param pulumi.Input[_builtins.str] model_prediction_output_schema_uri: Bucket URI to the schema for the model output
         :param pulumi.Input[_builtins.str] project_id: Google Cloud Project ID
         :param pulumi.Input[_builtins.str] region: Google Cloud region
         :param pulumi.Input[_builtins.str] service_account: Service account for the model. If ModelImage is pointing to a private registry, this service account must have read access to the registry.
         :param pulumi.Input['EndpointModelDeploymentArgsArgs'] endpoint_model_deployment: Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
         :param pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]] labels: Labels for the deployment
+        :param pulumi.Input[_builtins.str] model_artifacts_bucket_uri: Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
         :param pulumi.Input[_builtins.str] model_prediction_behavior_schema_uri: Bucket URI to the schema for the model inference behavior
+        :param pulumi.Input[_builtins.str] model_prediction_input_schema_uri: Bucket URI to the schema for the model input
+        :param pulumi.Input[_builtins.str] model_prediction_output_schema_uri: Bucket URI to the schema for the model output
         """
-        pulumi.set(__self__, "model_artifacts_bucket_uri", model_artifacts_bucket_uri)
         pulumi.set(__self__, "model_image_url", model_image_url)
-        pulumi.set(__self__, "model_prediction_input_schema_uri", model_prediction_input_schema_uri)
-        pulumi.set(__self__, "model_prediction_output_schema_uri", model_prediction_output_schema_uri)
         pulumi.set(__self__, "project_id", project_id)
         pulumi.set(__self__, "region", region)
         pulumi.set(__self__, "service_account", service_account)
@@ -59,22 +56,16 @@ class VertexModelDeploymentArgs:
             pulumi.set(__self__, "health_route", health_route)
         if labels is not None:
             pulumi.set(__self__, "labels", labels)
+        if model_artifacts_bucket_uri is not None:
+            pulumi.set(__self__, "model_artifacts_bucket_uri", model_artifacts_bucket_uri)
         if model_prediction_behavior_schema_uri is not None:
             pulumi.set(__self__, "model_prediction_behavior_schema_uri", model_prediction_behavior_schema_uri)
+        if model_prediction_input_schema_uri is not None:
+            pulumi.set(__self__, "model_prediction_input_schema_uri", model_prediction_input_schema_uri)
+        if model_prediction_output_schema_uri is not None:
+            pulumi.set(__self__, "model_prediction_output_schema_uri", model_prediction_output_schema_uri)
         if predict_route is not None:
             pulumi.set(__self__, "predict_route", predict_route)
-
-    @_builtins.property
-    @pulumi.getter(name="modelArtifactsBucketUri")
-    def model_artifacts_bucket_uri(self) -> pulumi.Input[_builtins.str]:
-        """
-        Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
-        """
-        return pulumi.get(self, "model_artifacts_bucket_uri")
-
-    @model_artifacts_bucket_uri.setter
-    def model_artifacts_bucket_uri(self, value: pulumi.Input[_builtins.str]):
-        pulumi.set(self, "model_artifacts_bucket_uri", value)
 
     @_builtins.property
     @pulumi.getter(name="modelImageUrl")
@@ -87,30 +78,6 @@ class VertexModelDeploymentArgs:
     @model_image_url.setter
     def model_image_url(self, value: pulumi.Input[_builtins.str]):
         pulumi.set(self, "model_image_url", value)
-
-    @_builtins.property
-    @pulumi.getter(name="modelPredictionInputSchemaUri")
-    def model_prediction_input_schema_uri(self) -> pulumi.Input[_builtins.str]:
-        """
-        Bucket URI to the schema for the model input
-        """
-        return pulumi.get(self, "model_prediction_input_schema_uri")
-
-    @model_prediction_input_schema_uri.setter
-    def model_prediction_input_schema_uri(self, value: pulumi.Input[_builtins.str]):
-        pulumi.set(self, "model_prediction_input_schema_uri", value)
-
-    @_builtins.property
-    @pulumi.getter(name="modelPredictionOutputSchemaUri")
-    def model_prediction_output_schema_uri(self) -> pulumi.Input[_builtins.str]:
-        """
-        Bucket URI to the schema for the model output
-        """
-        return pulumi.get(self, "model_prediction_output_schema_uri")
-
-    @model_prediction_output_schema_uri.setter
-    def model_prediction_output_schema_uri(self, value: pulumi.Input[_builtins.str]):
-        pulumi.set(self, "model_prediction_output_schema_uri", value)
 
     @_builtins.property
     @pulumi.getter(name="projectId")
@@ -182,6 +149,18 @@ class VertexModelDeploymentArgs:
         pulumi.set(self, "labels", value)
 
     @_builtins.property
+    @pulumi.getter(name="modelArtifactsBucketUri")
+    def model_artifacts_bucket_uri(self) -> Optional[pulumi.Input[_builtins.str]]:
+        """
+        Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
+        """
+        return pulumi.get(self, "model_artifacts_bucket_uri")
+
+    @model_artifacts_bucket_uri.setter
+    def model_artifacts_bucket_uri(self, value: Optional[pulumi.Input[_builtins.str]]):
+        pulumi.set(self, "model_artifacts_bucket_uri", value)
+
+    @_builtins.property
     @pulumi.getter(name="modelPredictionBehaviorSchemaUri")
     def model_prediction_behavior_schema_uri(self) -> Optional[pulumi.Input[_builtins.str]]:
         """
@@ -192,6 +171,30 @@ class VertexModelDeploymentArgs:
     @model_prediction_behavior_schema_uri.setter
     def model_prediction_behavior_schema_uri(self, value: Optional[pulumi.Input[_builtins.str]]):
         pulumi.set(self, "model_prediction_behavior_schema_uri", value)
+
+    @_builtins.property
+    @pulumi.getter(name="modelPredictionInputSchemaUri")
+    def model_prediction_input_schema_uri(self) -> Optional[pulumi.Input[_builtins.str]]:
+        """
+        Bucket URI to the schema for the model input
+        """
+        return pulumi.get(self, "model_prediction_input_schema_uri")
+
+    @model_prediction_input_schema_uri.setter
+    def model_prediction_input_schema_uri(self, value: Optional[pulumi.Input[_builtins.str]]):
+        pulumi.set(self, "model_prediction_input_schema_uri", value)
+
+    @_builtins.property
+    @pulumi.getter(name="modelPredictionOutputSchemaUri")
+    def model_prediction_output_schema_uri(self) -> Optional[pulumi.Input[_builtins.str]]:
+        """
+        Bucket URI to the schema for the model output
+        """
+        return pulumi.get(self, "model_prediction_output_schema_uri")
+
+    @model_prediction_output_schema_uri.setter
+    def model_prediction_output_schema_uri(self, value: Optional[pulumi.Input[_builtins.str]]):
+        pulumi.set(self, "model_prediction_output_schema_uri", value)
 
     @_builtins.property
     @pulumi.getter(name="predictRoute")
@@ -286,18 +289,12 @@ class VertexModelDeployment(pulumi.CustomResource):
             __props__.__dict__["endpoint_model_deployment"] = endpoint_model_deployment
             __props__.__dict__["health_route"] = health_route
             __props__.__dict__["labels"] = labels
-            if model_artifacts_bucket_uri is None and not opts.urn:
-                raise TypeError("Missing required property 'model_artifacts_bucket_uri'")
             __props__.__dict__["model_artifacts_bucket_uri"] = model_artifacts_bucket_uri
             if model_image_url is None and not opts.urn:
                 raise TypeError("Missing required property 'model_image_url'")
             __props__.__dict__["model_image_url"] = model_image_url
             __props__.__dict__["model_prediction_behavior_schema_uri"] = model_prediction_behavior_schema_uri
-            if model_prediction_input_schema_uri is None and not opts.urn:
-                raise TypeError("Missing required property 'model_prediction_input_schema_uri'")
             __props__.__dict__["model_prediction_input_schema_uri"] = model_prediction_input_schema_uri
-            if model_prediction_output_schema_uri is None and not opts.urn:
-                raise TypeError("Missing required property 'model_prediction_output_schema_uri'")
             __props__.__dict__["model_prediction_output_schema_uri"] = model_prediction_output_schema_uri
             __props__.__dict__["predict_route"] = predict_route
             if project_id is None and not opts.urn:
@@ -400,7 +397,7 @@ class VertexModelDeployment(pulumi.CustomResource):
 
     @_builtins.property
     @pulumi.getter(name="modelArtifactsBucketUri")
-    def model_artifacts_bucket_uri(self) -> pulumi.Output[_builtins.str]:
+    def model_artifacts_bucket_uri(self) -> pulumi.Output[Optional[_builtins.str]]:
         """
         Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
         """
@@ -429,7 +426,7 @@ class VertexModelDeployment(pulumi.CustomResource):
 
     @_builtins.property
     @pulumi.getter(name="modelPredictionInputSchemaUri")
-    def model_prediction_input_schema_uri(self) -> pulumi.Output[_builtins.str]:
+    def model_prediction_input_schema_uri(self) -> pulumi.Output[Optional[_builtins.str]]:
         """
         Bucket URI to the schema for the model input
         """
@@ -437,7 +434,7 @@ class VertexModelDeployment(pulumi.CustomResource):
 
     @_builtins.property
     @pulumi.getter(name="modelPredictionOutputSchemaUri")
-    def model_prediction_output_schema_uri(self) -> pulumi.Output[_builtins.str]:
+    def model_prediction_output_schema_uri(self) -> pulumi.Output[Optional[_builtins.str]]:
         """
         Bucket URI to the schema for the model output
         """

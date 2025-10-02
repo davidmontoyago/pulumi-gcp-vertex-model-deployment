@@ -59,15 +59,15 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
      * Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
      * 
      */
-    @Import(name="modelArtifactsBucketUri", required=true)
-    private Output<String> modelArtifactsBucketUri;
+    @Import(name="modelArtifactsBucketUri")
+    private @Nullable Output<String> modelArtifactsBucketUri;
 
     /**
      * @return Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
      * 
      */
-    public Output<String> modelArtifactsBucketUri() {
-        return this.modelArtifactsBucketUri;
+    public Optional<Output<String>> modelArtifactsBucketUri() {
+        return Optional.ofNullable(this.modelArtifactsBucketUri);
     }
 
     /**
@@ -104,30 +104,30 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
      * Bucket URI to the schema for the model input
      * 
      */
-    @Import(name="modelPredictionInputSchemaUri", required=true)
-    private Output<String> modelPredictionInputSchemaUri;
+    @Import(name="modelPredictionInputSchemaUri")
+    private @Nullable Output<String> modelPredictionInputSchemaUri;
 
     /**
      * @return Bucket URI to the schema for the model input
      * 
      */
-    public Output<String> modelPredictionInputSchemaUri() {
-        return this.modelPredictionInputSchemaUri;
+    public Optional<Output<String>> modelPredictionInputSchemaUri() {
+        return Optional.ofNullable(this.modelPredictionInputSchemaUri);
     }
 
     /**
      * Bucket URI to the schema for the model output
      * 
      */
-    @Import(name="modelPredictionOutputSchemaUri", required=true)
-    private Output<String> modelPredictionOutputSchemaUri;
+    @Import(name="modelPredictionOutputSchemaUri")
+    private @Nullable Output<String> modelPredictionOutputSchemaUri;
 
     /**
      * @return Bucket URI to the schema for the model output
      * 
      */
-    public Output<String> modelPredictionOutputSchemaUri() {
-        return this.modelPredictionOutputSchemaUri;
+    public Optional<Output<String>> modelPredictionOutputSchemaUri() {
+        return Optional.ofNullable(this.modelPredictionOutputSchemaUri);
     }
 
     @Import(name="predictRoute")
@@ -274,7 +274,7 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
          * @return builder
          * 
          */
-        public Builder modelArtifactsBucketUri(Output<String> modelArtifactsBucketUri) {
+        public Builder modelArtifactsBucketUri(@Nullable Output<String> modelArtifactsBucketUri) {
             $.modelArtifactsBucketUri = modelArtifactsBucketUri;
             return this;
         }
@@ -337,7 +337,7 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
          * @return builder
          * 
          */
-        public Builder modelPredictionInputSchemaUri(Output<String> modelPredictionInputSchemaUri) {
+        public Builder modelPredictionInputSchemaUri(@Nullable Output<String> modelPredictionInputSchemaUri) {
             $.modelPredictionInputSchemaUri = modelPredictionInputSchemaUri;
             return this;
         }
@@ -358,7 +358,7 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
          * @return builder
          * 
          */
-        public Builder modelPredictionOutputSchemaUri(Output<String> modelPredictionOutputSchemaUri) {
+        public Builder modelPredictionOutputSchemaUri(@Nullable Output<String> modelPredictionOutputSchemaUri) {
             $.modelPredictionOutputSchemaUri = modelPredictionOutputSchemaUri;
             return this;
         }
@@ -446,17 +446,8 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
         }
 
         public VertexModelDeploymentArgs build() {
-            if ($.modelArtifactsBucketUri == null) {
-                throw new MissingRequiredPropertyException("VertexModelDeploymentArgs", "modelArtifactsBucketUri");
-            }
             if ($.modelImageUrl == null) {
                 throw new MissingRequiredPropertyException("VertexModelDeploymentArgs", "modelImageUrl");
-            }
-            if ($.modelPredictionInputSchemaUri == null) {
-                throw new MissingRequiredPropertyException("VertexModelDeploymentArgs", "modelPredictionInputSchemaUri");
-            }
-            if ($.modelPredictionOutputSchemaUri == null) {
-                throw new MissingRequiredPropertyException("VertexModelDeploymentArgs", "modelPredictionOutputSchemaUri");
             }
             if ($.projectId == null) {
                 throw new MissingRequiredPropertyException("VertexModelDeploymentArgs", "projectId");

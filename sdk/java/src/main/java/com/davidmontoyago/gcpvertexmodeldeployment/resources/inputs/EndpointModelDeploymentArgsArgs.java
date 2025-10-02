@@ -19,6 +19,36 @@ public final class EndpointModelDeploymentArgsArgs extends com.pulumi.resources.
     public static final EndpointModelDeploymentArgsArgs Empty = new EndpointModelDeploymentArgsArgs();
 
     /**
+     * Accelerator count for deployment
+     * 
+     */
+    @Import(name="acceleratorCount")
+    private @Nullable Output<Integer> acceleratorCount;
+
+    /**
+     * @return Accelerator count for deployment
+     * 
+     */
+    public Optional<Output<Integer>> acceleratorCount() {
+        return Optional.ofNullable(this.acceleratorCount);
+    }
+
+    /**
+     * Accelerator type for endpoint deployment. Defaults to ACCELERATOR_TYPE_UNSPECIFIED. E.g.: NVIDIA_TESLA_P4, NVIDIA_TESLA_T4
+     * 
+     */
+    @Import(name="acceleratorType")
+    private @Nullable Output<String> acceleratorType;
+
+    /**
+     * @return Accelerator type for endpoint deployment. Defaults to ACCELERATOR_TYPE_UNSPECIFIED. E.g.: NVIDIA_TESLA_P4, NVIDIA_TESLA_T4
+     * 
+     */
+    public Optional<Output<String>> acceleratorType() {
+        return Optional.ofNullable(this.acceleratorType);
+    }
+
+    /**
      * Vertex AI Endpoint ID
      * 
      */
@@ -96,6 +126,8 @@ public final class EndpointModelDeploymentArgsArgs extends com.pulumi.resources.
     private EndpointModelDeploymentArgsArgs() {}
 
     private EndpointModelDeploymentArgsArgs(EndpointModelDeploymentArgsArgs $) {
+        this.acceleratorCount = $.acceleratorCount;
+        this.acceleratorType = $.acceleratorType;
         this.endpointId = $.endpointId;
         this.machineType = $.machineType;
         this.maxReplicas = $.maxReplicas;
@@ -119,6 +151,48 @@ public final class EndpointModelDeploymentArgsArgs extends com.pulumi.resources.
 
         public Builder(EndpointModelDeploymentArgsArgs defaults) {
             $ = new EndpointModelDeploymentArgsArgs(Objects.requireNonNull(defaults));
+        }
+
+        /**
+         * @param acceleratorCount Accelerator count for deployment
+         * 
+         * @return builder
+         * 
+         */
+        public Builder acceleratorCount(@Nullable Output<Integer> acceleratorCount) {
+            $.acceleratorCount = acceleratorCount;
+            return this;
+        }
+
+        /**
+         * @param acceleratorCount Accelerator count for deployment
+         * 
+         * @return builder
+         * 
+         */
+        public Builder acceleratorCount(Integer acceleratorCount) {
+            return acceleratorCount(Output.of(acceleratorCount));
+        }
+
+        /**
+         * @param acceleratorType Accelerator type for endpoint deployment. Defaults to ACCELERATOR_TYPE_UNSPECIFIED. E.g.: NVIDIA_TESLA_P4, NVIDIA_TESLA_T4
+         * 
+         * @return builder
+         * 
+         */
+        public Builder acceleratorType(@Nullable Output<String> acceleratorType) {
+            $.acceleratorType = acceleratorType;
+            return this;
+        }
+
+        /**
+         * @param acceleratorType Accelerator type for endpoint deployment. Defaults to ACCELERATOR_TYPE_UNSPECIFIED. E.g.: NVIDIA_TESLA_P4, NVIDIA_TESLA_T4
+         * 
+         * @return builder
+         * 
+         */
+        public Builder acceleratorType(String acceleratorType) {
+            return acceleratorType(Output.of(acceleratorType));
         }
 
         /**
@@ -230,7 +304,7 @@ public final class EndpointModelDeploymentArgsArgs extends com.pulumi.resources.
             if ($.endpointId == null) {
                 throw new MissingRequiredPropertyException("EndpointModelDeploymentArgsArgs", "endpointId");
             }
-            $.machineType = Codegen.stringProp("machineType").output().arg($.machineType).def("n1-standard-2").getNullable();
+            $.machineType = Codegen.stringProp("machineType").output().arg($.machineType).def("n1-standard-8").getNullable();
             $.maxReplicas = Codegen.integerProp("maxReplicas").output().arg($.maxReplicas).def(3).getNullable();
             $.minReplicas = Codegen.integerProp("minReplicas").output().arg($.minReplicas).def(1).getNullable();
             $.trafficPercent = Codegen.integerProp("trafficPercent").output().arg($.trafficPercent).def(100).getNullable();

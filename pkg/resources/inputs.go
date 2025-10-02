@@ -5,9 +5,10 @@ import "github.com/pulumi/pulumi-go-provider/infer"
 
 // VertexModelDeploymentArgs defines the input arguments for creating a Vertex AI model deployment.
 type VertexModelDeploymentArgs struct {
-	ProjectID                        string `pulumi:"projectId"`
-	Region                           string `pulumi:"region"`
-	ModelImageURL                    string `pulumi:"modelImageUrl"`
+	ProjectID     string `pulumi:"projectId"`
+	Region        string `pulumi:"region"`
+	ModelImageURL string `pulumi:"modelImageUrl"`
+
 	ModelArtifactsBucketURI          string `pulumi:"modelArtifactsBucketUri,optional"`
 	ModelPredictionInputSchemaURI    string `pulumi:"modelPredictionInputSchemaUri,optional"`
 	ModelPredictionOutputSchemaURI   string `pulumi:"modelPredictionOutputSchemaUri,optional"`
@@ -42,11 +43,13 @@ type VertexModelDeploymentArgs struct {
 // EndpointModelDeploymentArgs defines the input arguments for deploying an
 // uploaded model to a Vertex AI endpoint.
 type EndpointModelDeploymentArgs struct {
-	EndpointID     string `pulumi:"endpointId"`
-	MachineType    string `pulumi:"machineType,optional"`
-	MinReplicas    int    `pulumi:"minReplicas,optional"`
-	MaxReplicas    int    `pulumi:"maxReplicas,optional"`
-	TrafficPercent int    `pulumi:"trafficPercent,optional"`
+	EndpointID       string `pulumi:"endpointId"`
+	MachineType      string `pulumi:"machineType,optional"`
+	AcceleratorType  string `pulumi:"acceleratorType,optional"`
+	AcceleratorCount int32  `pulumi:"acceleratorCount,optional"`
+	MinReplicas      int    `pulumi:"minReplicas,optional"`
+	MaxReplicas      int    `pulumi:"maxReplicas,optional"`
+	TrafficPercent   int    `pulumi:"trafficPercent,optional"`
 }
 
 // Annotate provides metadata and default values for the VertexModelDeploymentArgs.
@@ -67,12 +70,14 @@ func (args *VertexModelDeploymentArgs) Annotate(annotator infer.Annotator) {
 func (args *EndpointModelDeploymentArgs) Annotate(annotator infer.Annotator) {
 	annotator.Describe(&args.EndpointID, "Vertex AI Endpoint ID")
 	annotator.Describe(&args.MachineType, "Machine type for deployment")
+	annotator.Describe(&args.AcceleratorType, "Accelerator type for endpoint deployment. Defaults to ACCELERATOR_TYPE_UNSPECIFIED. E.g.: NVIDIA_TESLA_P4, NVIDIA_TESLA_T4")
+	annotator.Describe(&args.AcceleratorCount, "Accelerator count for deployment")
 	annotator.Describe(&args.MinReplicas, "Minimum number of replicas")
 	annotator.Describe(&args.MaxReplicas, "Maximum number of replicas")
 	annotator.Describe(&args.TrafficPercent, "Traffic percentage for this deployment")
 
 	// Set defaults
-	annotator.SetDefault(&args.MachineType, "n1-standard-2")
+	annotator.SetDefault(&args.MachineType, "n1-standard-8")
 	annotator.SetDefault(&args.MinReplicas, 1)
 	annotator.SetDefault(&args.MaxReplicas, 3)
 	annotator.SetDefault(&args.TrafficPercent, 100)

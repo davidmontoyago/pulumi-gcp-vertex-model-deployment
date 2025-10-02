@@ -53,7 +53,7 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources
         /// Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
         /// </summary>
         [Output("modelArtifactsBucketUri")]
-        public Output<string> ModelArtifactsBucketUri { get; private set; } = null!;
+        public Output<string?> ModelArtifactsBucketUri { get; private set; } = null!;
 
         /// <summary>
         /// Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers
@@ -74,13 +74,13 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources
         /// Bucket URI to the schema for the model input
         /// </summary>
         [Output("modelPredictionInputSchemaUri")]
-        public Output<string> ModelPredictionInputSchemaUri { get; private set; } = null!;
+        public Output<string?> ModelPredictionInputSchemaUri { get; private set; } = null!;
 
         /// <summary>
         /// Bucket URI to the schema for the model output
         /// </summary>
         [Output("modelPredictionOutputSchemaUri")]
-        public Output<string> ModelPredictionOutputSchemaUri { get; private set; } = null!;
+        public Output<string?> ModelPredictionOutputSchemaUri { get; private set; } = null!;
 
         [Output("predictRoute")]
         public Output<string?> PredictRoute { get; private set; } = null!;
@@ -173,8 +173,8 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources
         /// <summary>
         /// Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
         /// </summary>
-        [Input("modelArtifactsBucketUri", required: true)]
-        public Input<string> ModelArtifactsBucketUri { get; set; } = null!;
+        [Input("modelArtifactsBucketUri")]
+        public Input<string>? ModelArtifactsBucketUri { get; set; }
 
         /// <summary>
         /// Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers
@@ -191,14 +191,14 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources
         /// <summary>
         /// Bucket URI to the schema for the model input
         /// </summary>
-        [Input("modelPredictionInputSchemaUri", required: true)]
-        public Input<string> ModelPredictionInputSchemaUri { get; set; } = null!;
+        [Input("modelPredictionInputSchemaUri")]
+        public Input<string>? ModelPredictionInputSchemaUri { get; set; }
 
         /// <summary>
         /// Bucket URI to the schema for the model output
         /// </summary>
-        [Input("modelPredictionOutputSchemaUri", required: true)]
-        public Input<string> ModelPredictionOutputSchemaUri { get; set; } = null!;
+        [Input("modelPredictionOutputSchemaUri")]
+        public Input<string>? ModelPredictionOutputSchemaUri { get; set; }
 
         [Input("predictRoute")]
         public Input<string>? PredictRoute { get; set; }

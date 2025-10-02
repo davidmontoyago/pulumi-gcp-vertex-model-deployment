@@ -90,10 +90,10 @@ func (v VertexModelDeployment) Create(
 		Name:                             req.Name,
 		ModelImageURL:                    req.Inputs.ModelImageURL,
 		ModelArtifactsBucketURI:          req.Inputs.ModelArtifactsBucketURI,
-		ServiceAccountEmail:              req.Inputs.ServiceAccount,
 		ModelPredictionInputSchemaURI:    req.Inputs.ModelPredictionInputSchemaURI,
 		ModelPredictionOutputSchemaURI:   req.Inputs.ModelPredictionOutputSchemaURI,
 		ModelPredictionBehaviorSchemaURI: req.Inputs.ModelPredictionBehaviorSchemaURI,
+		ServiceAccountEmail:              req.Inputs.ServiceAccount,
 		PredictRoute:                     req.Inputs.PredictRoute,
 		HealthRoute:                      req.Inputs.HealthRoute,
 	})

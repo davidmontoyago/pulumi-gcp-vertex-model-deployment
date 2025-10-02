@@ -1,4 +1,4 @@
-// Package resources provides Pulumi resource implementations for GCP Vertex AI model upload and deployment.
+// Package resources provides Pulumi resource implementations for GCP Vertex model upload to the registry and endpoint deployment.
 package resources
 
 import "github.com/pulumi/pulumi-go-provider/infer"
@@ -8,9 +8,9 @@ type VertexModelDeploymentArgs struct {
 	ProjectID                        string `pulumi:"projectId"`
 	Region                           string `pulumi:"region"`
 	ModelImageURL                    string `pulumi:"modelImageUrl"`
-	ModelArtifactsBucketURI          string `pulumi:"modelArtifactsBucketUri"`
-	ModelPredictionInputSchemaURI    string `pulumi:"modelPredictionInputSchemaUri"`
-	ModelPredictionOutputSchemaURI   string `pulumi:"modelPredictionOutputSchemaUri"`
+	ModelArtifactsBucketURI          string `pulumi:"modelArtifactsBucketUri,optional"`
+	ModelPredictionInputSchemaURI    string `pulumi:"modelPredictionInputSchemaUri,optional"`
+	ModelPredictionOutputSchemaURI   string `pulumi:"modelPredictionOutputSchemaUri,optional"`
 	ModelPredictionBehaviorSchemaURI string `pulumi:"modelPredictionBehaviorSchemaUri,optional"`
 	// If ModelImage is pointing to a private registry, this service account
 	// must have read access to the registry.

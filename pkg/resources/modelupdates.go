@@ -11,9 +11,13 @@ import (
 )
 
 func updateRegistryModel(ctx context.Context, req infer.UpdateRequest[VertexModelDeploymentArgs, VertexModelDeploymentState], modelClient services.VertexModelClient, updatePaths []string) (*aiplatformpb.Model, error) {
-	predictionSchema := &aiplatformpb.PredictSchemata{
-		InstanceSchemaUri:   req.Inputs.ModelPredictionInputSchemaURI,
-		PredictionSchemaUri: req.Inputs.ModelPredictionOutputSchemaURI,
+	predictionSchema := &aiplatformpb.PredictSchemata{}
+
+	if req.Inputs.ModelPredictionInputSchemaURI != "" {
+		predictionSchema.InstanceSchemaUri = req.Inputs.ModelPredictionInputSchemaURI
+	}
+	if req.Inputs.ModelPredictionOutputSchemaURI != "" {
+		predictionSchema.PredictionSchemaUri = req.Inputs.ModelPredictionOutputSchemaURI
 	}
 	if req.Inputs.ModelPredictionBehaviorSchemaURI != "" {
 		predictionSchema.ParametersSchemaUri = req.Inputs.ModelPredictionBehaviorSchemaURI

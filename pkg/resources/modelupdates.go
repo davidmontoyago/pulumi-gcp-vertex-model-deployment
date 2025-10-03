@@ -101,30 +101,7 @@ func setModelStateUpdates(req infer.UpdateRequest[VertexModelDeploymentArgs, Ver
 		// ImageUri is immutable, requires replacement.
 		// See: https://cloud.google.com/vertex-ai/docs/reference/rest/v1/ModelContainerSpec
 
-		if updatedModel.ContainerSpec.PredictRoute != "" {
-			updatedState.PredictRoute = updatedModel.ContainerSpec.PredictRoute
-		}
-		if updatedModel.ContainerSpec.HealthRoute != "" {
-			updatedState.HealthRoute = updatedModel.ContainerSpec.HealthRoute
-		}
-
-		// Update container args
-		if len(updatedModel.ContainerSpec.Args) > 0 {
-			updatedState.Args = updatedModel.ContainerSpec.Args
-		}
-
-		// Update environment variables
-		if len(updatedModel.ContainerSpec.Env) > 0 {
-			updatedState.EnvVars = make(map[string]string)
-			for _, env := range updatedModel.ContainerSpec.Env {
-				updatedState.EnvVars[env.Name] = env.Value
-			}
-		}
-
-		// Update port
-		if len(updatedModel.ContainerSpec.Ports) > 0 {
-			updatedState.Port = updatedModel.ContainerSpec.Ports[0].ContainerPort
-		}
+		setContainerSpecStateUpdates(updatedModel, updatedState)
 	}
 
 	// Update predict schemata fields if available
@@ -141,6 +118,33 @@ func setModelStateUpdates(req infer.UpdateRequest[VertexModelDeploymentArgs, Ver
 	}
 
 	return updatedState
+}
+
+func setContainerSpecStateUpdates(updatedModel *aiplatformpb.Model, updatedState VertexModelDeploymentState) {
+	if updatedModel.ContainerSpec.PredictRoute != "" {
+		updatedState.PredictRoute = updatedModel.ContainerSpec.PredictRoute
+	}
+	if updatedModel.ContainerSpec.HealthRoute != "" {
+		updatedState.HealthRoute = updatedModel.ContainerSpec.HealthRoute
+	}
+
+	// Update container args
+	if len(updatedModel.ContainerSpec.Args) > 0 {
+		updatedState.Args = updatedModel.ContainerSpec.Args
+	}
+
+	// Update environment variables
+	if len(updatedModel.ContainerSpec.Env) > 0 {
+		updatedState.EnvVars = make(map[string]string)
+		for _, env := range updatedModel.ContainerSpec.Env {
+			updatedState.EnvVars[env.Name] = env.Value
+		}
+	}
+
+	// Update port
+	if len(updatedModel.ContainerSpec.Ports) > 0 {
+		updatedState.Port = updatedModel.ContainerSpec.Ports[0].ContainerPort
+	}
 }
 
 func collectUpdates(req infer.UpdateRequest[VertexModelDeploymentArgs, VertexModelDeploymentState]) (bool, []string) {

@@ -33,8 +33,7 @@ func NewVertexEndpointModelGetter(endpointClient VertexEndpointClient, projectID
 // Returns the endpoint, the deployed model (if found), and any error.
 func (g *VertexEndpointModelGetter) Get(ctx context.Context, endpointName, deployedModelID string) (*aiplatformpb.Endpoint, *aiplatformpb.DeployedModel, error) {
 	getReq := &aiplatformpb.GetEndpointRequest{
-		Name: fmt.Sprintf("projects/%s/locations/%s/endpoints/%s",
-			g.projectID, g.region, endpointName),
+		Name: endpointName,
 	}
 
 	endpoint, err := g.endpointClient.GetEndpoint(ctx, getReq)

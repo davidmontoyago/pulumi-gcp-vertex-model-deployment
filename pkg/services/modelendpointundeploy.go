@@ -17,24 +17,19 @@ type ModelUndeployer interface {
 // VertexModelUndeploy implements the ModelUndeployer interface for Vertex AI.
 type VertexModelUndeploy struct {
 	endpointClient VertexEndpointClient
-	project        string
-	region         string
 }
 
-// NewVertexModelUndeploy creates a new VertexModelUndeploy with the provided endpoint client and model name.
-func NewVertexModelUndeploy(_ context.Context, endpointClient VertexEndpointClient, project, region string) *VertexModelUndeploy {
+// NewVertexModelUndeploy creates a new VertexModelUndeploy with the provided endpoint client.
+func NewVertexModelUndeploy(_ context.Context, endpointClient VertexEndpointClient, _, _ string) *VertexModelUndeploy {
 	return &VertexModelUndeploy{
 		endpointClient: endpointClient,
-		project:        project,
-		region:         region,
 	}
 }
 
 // Undeploy undeploys a model from an endpoint.
 func (u *VertexModelUndeploy) Undeploy(ctx context.Context, endpointName, deployedModelID string) error {
 	undeployReq := &aiplatformpb.UndeployModelRequest{
-		Endpoint: fmt.Sprintf("projects/%s/locations/%s/endpoints/%s",
-			u.project, u.region, endpointName),
+		Endpoint:        endpointName, // endpointName is already fully qualified
 		DeployedModelId: deployedModelID,
 	}
 

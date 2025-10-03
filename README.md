@@ -2,7 +2,7 @@
 
 [![Develop](https://github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment/actions/workflows/develop.yaml/badge.svg)](https://github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment/actions/workflows/develop.yaml) [![Go Coverage](https://raw.githubusercontent.com/wiki/davidmontoyago/pulumi-gcp-vertex-model-deployment/coverage.svg)](https://raw.githack.com/wiki/davidmontoyago/pulumi-gcp-vertex-model-deployment/coverage.html) [![Go Reference](https://pkg.go.dev/badge/github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment.svg)](https://pkg.go.dev/github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment)
 
-Pulumi custom provider to upload and deploy models to the Vertex platform.
+The model registry is the integration point for all Vertex ML capabilities. This Pulumi custom provider allows deploying models to the Vertex model registry.
 
 ### Deploy model for batched prediction jobs
 Upload model with a docker image to the model registry:

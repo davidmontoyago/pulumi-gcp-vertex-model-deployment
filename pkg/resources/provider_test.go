@@ -560,7 +560,6 @@ func TestVertexModelDeploymentDelete_ModelWithEndpoint(t *testing.T) {
 	// Test state for model deletion with endpoint deployment
 	projectID := testProjectID
 	region := testRegion
-	endpointID := testEndpointID
 	modelName := testModelName
 	deployedModelID := "deployed-model-id-123"
 	createTime := testCreateTime
@@ -575,8 +574,8 @@ func TestVertexModelDeploymentDelete_ModelWithEndpoint(t *testing.T) {
 			Region:    region,
 		},
 		ModelName:       modelName,
-		DeployedModelID: deployedModelID, // Has endpoint deployment
-		EndpointName:    endpointID,      // Has endpoint deployment
+		DeployedModelID: deployedModelID,  // Has endpoint deployment
+		EndpointName:    testEndpointPath, // Has endpoint deployment - use full path
 		CreateTime:      createTime,
 	}
 
@@ -1146,7 +1145,7 @@ func TestVertexModelDeploymentRead_ModelWithEndpoint(t *testing.T) {
 		},
 		ModelName:       modelName,
 		DeployedModelID: deployedModelID,
-		EndpointName:    endpointID, // Will be updated to full name
+		EndpointName:    testEndpointPath, // Use full path format
 		CreateTime:      createTime,
 	}
 

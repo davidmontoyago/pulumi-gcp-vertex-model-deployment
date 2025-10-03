@@ -31,8 +31,8 @@ type VertexModelDeploymentArgs struct {
 	// Target endpoint for the model deployment.
 	//
 	// Set only when serving the model on a Vertex AI Endpoint.
-	// Deploying a model to a Vertex AI Endpoint is not yet supported by Terraform
-	// nor the Pulumi Google Cloud Native provider, hence, this custom provider
+	// Deploying a custom or dockerized model to a Vertex AI Endpoint is not yet supported
+	// by Terraform nor the Pulumi Google Cloud Native provider, hence, this custom provider
 	// exists.
 	// See: https://github.com/hashicorp/terraform-provider-google/issues/15303
 	//

@@ -5,8 +5,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"cloud.google.com/go/aiplatform/apiv1/aiplatformpb"
+	gax "github.com/googleapis/gax-go/v2"
 )
 
 // EndpointModelDeploymentConfig holds configuration for deploying a model to an endpoint.
@@ -93,7 +95,7 @@ func (d *VertexModelDeploy) Deploy(ctx context.Context, modelName, displayName, 
 	}
 
 	// Wait for completion with timeout
-	result, err := deployOperation.Wait(ctx)
+	result, err := deployOperation.Wait(ctx, gax.WithTimeout(10*time.Minute))
 	if err != nil {
 		return "", fmt.Errorf("failed to wait for deployment: %w", err)
 	}

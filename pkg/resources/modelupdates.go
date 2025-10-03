@@ -218,5 +218,6 @@ func slicesEqual(a, b []string) bool {
 			return false
 		}
 	}
+
 	return true
 }

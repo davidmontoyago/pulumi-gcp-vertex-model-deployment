@@ -55,21 +55,6 @@ func NewVertexModelUpload(_ context.Context, modelClient VertexModelClient, proj
 
 // Upload uploads a model to Vertex AI and returns the model name.
 func (u *VertexModelUpload) Upload(ctx context.Context, params ModelUpload) (string, error) {
-
-	predictionSchema := &aiplatformpb.PredictSchemata{}
-	if params.ModelPredictionInputSchemaURI != "" {
-		// Schema for the model input
-		predictionSchema.InstanceSchemaUri = params.ModelPredictionInputSchemaURI
-	}
-	if params.ModelPredictionOutputSchemaURI != "" {
-		// Schema for the model output
-		predictionSchema.PredictionSchemaUri = params.ModelPredictionOutputSchemaURI
-	}
-	if params.ModelPredictionBehaviorSchemaURI != "" {
-		// Schema for the model inference behavior. Optional depending on the model.
-		predictionSchema.ParametersSchemaUri = params.ModelPredictionBehaviorSchemaURI
-	}
-
 	envVars := []*aiplatformpb.EnvVar{}
 	for name, value := range params.EnvVars {
 		envVars = append(envVars, &aiplatformpb.EnvVar{
@@ -95,9 +80,21 @@ func (u *VertexModelUpload) Upload(ctx context.Context, params ModelUpload) (str
 				},
 			},
 		},
-		Labels:          u.labels,
-		ArtifactUri:     params.ModelArtifactsBucketURI,
-		PredictSchemata: predictionSchema,
+		Labels:      u.labels,
+		ArtifactUri: params.ModelArtifactsBucketURI,
+	}
+
+	if params.ModelPredictionInputSchemaURI != "" {
+		modelArgs.PredictSchemata = &aiplatformpb.PredictSchemata{
+			// Schema for the model input
+			InstanceSchemaUri: params.ModelPredictionInputSchemaURI,
+			// Schema for the model output
+			PredictionSchemaUri: params.ModelPredictionOutputSchemaURI,
+		}
+		if params.ModelPredictionBehaviorSchemaURI != "" {
+			// Schema for the model inference behavior. Optional depending on the model.
+			modelArgs.PredictSchemata.ParametersSchemaUri = params.ModelPredictionBehaviorSchemaURI
+		}
 	}
 
 	if params.PredictRoute != "" {
@@ -136,8 +133,7 @@ func (u *VertexModelUpload) Upload(ctx context.Context, params ModelUpload) (str
 		return "MOCKED_MODEL_NAME", nil
 	}
 
-	// TODO make timeout configurable
-	modelUploadResult, err := modelUploadOp.Wait(context.Background(), gax.WithTimeout(10*time.Minute))
+	modelUploadResult, err := modelUploadOp.Wait(ctx, gax.WithTimeout(10*time.Minute))
 	if err != nil {
 		if modelUploadOp.Done() {
 			log.Printf("Model upload operation completed with failure: %v\n", err)

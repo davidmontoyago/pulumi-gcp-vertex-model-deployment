@@ -10,7 +10,9 @@ import com.pulumi.core.Output;
 import com.pulumi.core.annotations.Export;
 import com.pulumi.core.annotations.ResourceType;
 import com.pulumi.core.internal.Codegen;
+import java.lang.Integer;
 import java.lang.String;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -21,6 +23,20 @@ import javax.annotation.Nullable;
  */
 @ResourceType(type="gcp-vertex-model-deployment:resources:VertexModelDeployment")
 public class VertexModelDeployment extends com.pulumi.resources.CustomResource {
+    /**
+     * Dockerized model server command line arguments
+     * 
+     */
+    @Export(name="args", refs={List.class,String.class}, tree="[0,1]")
+    private Output</* @Nullable */ List<String>> args;
+
+    /**
+     * @return Dockerized model server command line arguments
+     * 
+     */
+    public Output<Optional<List<String>>> args() {
+        return Codegen.optional(this.args);
+    }
     /**
      * Creation timestamp
      * 
@@ -76,6 +92,20 @@ public class VertexModelDeployment extends com.pulumi.resources.CustomResource {
      */
     public Output<String> endpointName() {
         return this.endpointName;
+    }
+    /**
+     * Environment variables
+     * 
+     */
+    @Export(name="env", refs={Map.class,String.class}, tree="[0,1,1]")
+    private Output</* @Nullable */ Map<String,String>> env;
+
+    /**
+     * @return Environment variables
+     * 
+     */
+    public Output<Optional<Map<String,String>>> env() {
+        return Codegen.optional(this.env);
     }
     @Export(name="healthRoute", refs={String.class}, tree="[0]")
     private Output</* @Nullable */ String> healthRoute;
@@ -172,6 +202,20 @@ public class VertexModelDeployment extends com.pulumi.resources.CustomResource {
      */
     public Output<Optional<String>> modelPredictionOutputSchemaUri() {
         return Codegen.optional(this.modelPredictionOutputSchemaUri);
+    }
+    /**
+     * Port for the model server. Defaults to 8080.
+     * 
+     */
+    @Export(name="port", refs={Integer.class}, tree="[0]")
+    private Output</* @Nullable */ Integer> port;
+
+    /**
+     * @return Port for the model server. Defaults to 8080.
+     * 
+     */
+    public Output<Optional<Integer>> port() {
+        return Codegen.optional(this.port);
     }
     @Export(name="predictRoute", refs={String.class}, tree="[0]")
     private Output</* @Nullable */ String> predictRoute;

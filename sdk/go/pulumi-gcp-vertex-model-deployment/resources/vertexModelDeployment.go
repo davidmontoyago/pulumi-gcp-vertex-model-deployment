@@ -16,6 +16,8 @@ import (
 type VertexModelDeployment struct {
 	pulumi.CustomResourceState
 
+	// Dockerized model server command line arguments
+	Args pulumi.StringArrayOutput `pulumi:"args"`
 	// Creation timestamp
 	CreateTime pulumi.StringOutput `pulumi:"createTime"`
 	// ID of the deployed model
@@ -23,8 +25,10 @@ type VertexModelDeployment struct {
 	// Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
 	EndpointModelDeployment EndpointModelDeploymentArgsPtrOutput `pulumi:"endpointModelDeployment"`
 	// Full name of the endpoint
-	EndpointName pulumi.StringOutput    `pulumi:"endpointName"`
-	HealthRoute  pulumi.StringPtrOutput `pulumi:"healthRoute"`
+	EndpointName pulumi.StringOutput `pulumi:"endpointName"`
+	// Environment variables
+	Env         pulumi.StringMapOutput `pulumi:"env"`
+	HealthRoute pulumi.StringPtrOutput `pulumi:"healthRoute"`
 	// Labels for the deployment
 	Labels pulumi.StringMapOutput `pulumi:"labels"`
 	// Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
@@ -38,7 +42,9 @@ type VertexModelDeployment struct {
 	ModelPredictionInputSchemaUri pulumi.StringPtrOutput `pulumi:"modelPredictionInputSchemaUri"`
 	// Bucket URI to the schema for the model output
 	ModelPredictionOutputSchemaUri pulumi.StringPtrOutput `pulumi:"modelPredictionOutputSchemaUri"`
-	PredictRoute                   pulumi.StringPtrOutput `pulumi:"predictRoute"`
+	// Port for the model server. Defaults to 8080.
+	Port         pulumi.IntPtrOutput    `pulumi:"port"`
+	PredictRoute pulumi.StringPtrOutput `pulumi:"predictRoute"`
 	// Google Cloud Project ID
 	ProjectId pulumi.StringOutput `pulumi:"projectId"`
 	// Google Cloud region
@@ -102,9 +108,13 @@ func (VertexModelDeploymentState) ElementType() reflect.Type {
 }
 
 type vertexModelDeploymentArgs struct {
+	// Dockerized model server command line arguments
+	Args []string `pulumi:"args"`
 	// Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
 	EndpointModelDeployment *EndpointModelDeploymentArgs `pulumi:"endpointModelDeployment"`
-	HealthRoute             *string                      `pulumi:"healthRoute"`
+	// Environment variables
+	Env         map[string]string `pulumi:"env"`
+	HealthRoute *string           `pulumi:"healthRoute"`
 	// Labels for the deployment
 	Labels map[string]string `pulumi:"labels"`
 	// Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
@@ -117,7 +127,9 @@ type vertexModelDeploymentArgs struct {
 	ModelPredictionInputSchemaUri *string `pulumi:"modelPredictionInputSchemaUri"`
 	// Bucket URI to the schema for the model output
 	ModelPredictionOutputSchemaUri *string `pulumi:"modelPredictionOutputSchemaUri"`
-	PredictRoute                   *string `pulumi:"predictRoute"`
+	// Port for the model server. Defaults to 8080.
+	Port         *int    `pulumi:"port"`
+	PredictRoute *string `pulumi:"predictRoute"`
 	// Google Cloud Project ID
 	ProjectId string `pulumi:"projectId"`
 	// Google Cloud region
@@ -128,9 +140,13 @@ type vertexModelDeploymentArgs struct {
 
 // The set of arguments for constructing a VertexModelDeployment resource.
 type VertexModelDeploymentArgs struct {
+	// Dockerized model server command line arguments
+	Args pulumi.StringArrayInput
 	// Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
 	EndpointModelDeployment EndpointModelDeploymentArgsPtrInput
-	HealthRoute             pulumi.StringPtrInput
+	// Environment variables
+	Env         pulumi.StringMapInput
+	HealthRoute pulumi.StringPtrInput
 	// Labels for the deployment
 	Labels pulumi.StringMapInput
 	// Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
@@ -143,7 +159,9 @@ type VertexModelDeploymentArgs struct {
 	ModelPredictionInputSchemaUri pulumi.StringPtrInput
 	// Bucket URI to the schema for the model output
 	ModelPredictionOutputSchemaUri pulumi.StringPtrInput
-	PredictRoute                   pulumi.StringPtrInput
+	// Port for the model server. Defaults to 8080.
+	Port         pulumi.IntPtrInput
+	PredictRoute pulumi.StringPtrInput
 	// Google Cloud Project ID
 	ProjectId pulumi.StringInput
 	// Google Cloud region
@@ -239,6 +257,11 @@ func (o VertexModelDeploymentOutput) ToVertexModelDeploymentOutputWithContext(ct
 	return o
 }
 
+// Dockerized model server command line arguments
+func (o VertexModelDeploymentOutput) Args() pulumi.StringArrayOutput {
+	return o.ApplyT(func(v *VertexModelDeployment) pulumi.StringArrayOutput { return v.Args }).(pulumi.StringArrayOutput)
+}
+
 // Creation timestamp
 func (o VertexModelDeploymentOutput) CreateTime() pulumi.StringOutput {
 	return o.ApplyT(func(v *VertexModelDeployment) pulumi.StringOutput { return v.CreateTime }).(pulumi.StringOutput)
@@ -257,6 +280,11 @@ func (o VertexModelDeploymentOutput) EndpointModelDeployment() EndpointModelDepl
 // Full name of the endpoint
 func (o VertexModelDeploymentOutput) EndpointName() pulumi.StringOutput {
 	return o.ApplyT(func(v *VertexModelDeployment) pulumi.StringOutput { return v.EndpointName }).(pulumi.StringOutput)
+}
+
+// Environment variables
+func (o VertexModelDeploymentOutput) Env() pulumi.StringMapOutput {
+	return o.ApplyT(func(v *VertexModelDeployment) pulumi.StringMapOutput { return v.Env }).(pulumi.StringMapOutput)
 }
 
 func (o VertexModelDeploymentOutput) HealthRoute() pulumi.StringPtrOutput {
@@ -295,6 +323,11 @@ func (o VertexModelDeploymentOutput) ModelPredictionInputSchemaUri() pulumi.Stri
 // Bucket URI to the schema for the model output
 func (o VertexModelDeploymentOutput) ModelPredictionOutputSchemaUri() pulumi.StringPtrOutput {
 	return o.ApplyT(func(v *VertexModelDeployment) pulumi.StringPtrOutput { return v.ModelPredictionOutputSchemaUri }).(pulumi.StringPtrOutput)
+}
+
+// Port for the model server. Defaults to 8080.
+func (o VertexModelDeploymentOutput) Port() pulumi.IntPtrOutput {
+	return o.ApplyT(func(v *VertexModelDeployment) pulumi.IntPtrOutput { return v.Port }).(pulumi.IntPtrOutput)
 }
 
 func (o VertexModelDeploymentOutput) PredictRoute() pulumi.StringPtrOutput {

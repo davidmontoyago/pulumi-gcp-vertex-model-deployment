@@ -17,6 +17,12 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources
     public partial class VertexModelDeployment : global::Pulumi.CustomResource
     {
         /// <summary>
+        /// Dockerized model server command line arguments
+        /// </summary>
+        [Output("args")]
+        public Output<ImmutableArray<string>> Args { get; private set; } = null!;
+
+        /// <summary>
         /// Creation timestamp
         /// </summary>
         [Output("createTime")]
@@ -39,6 +45,12 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources
         /// </summary>
         [Output("endpointName")]
         public Output<string> EndpointName { get; private set; } = null!;
+
+        /// <summary>
+        /// Environment variables
+        /// </summary>
+        [Output("env")]
+        public Output<ImmutableDictionary<string, string>?> Env { get; private set; } = null!;
 
         [Output("healthRoute")]
         public Output<string?> HealthRoute { get; private set; } = null!;
@@ -81,6 +93,12 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources
         /// </summary>
         [Output("modelPredictionOutputSchemaUri")]
         public Output<string?> ModelPredictionOutputSchemaUri { get; private set; } = null!;
+
+        /// <summary>
+        /// Port for the model server. Defaults to 8080.
+        /// </summary>
+        [Output("port")]
+        public Output<int?> Port { get; private set; } = null!;
 
         [Output("predictRoute")]
         public Output<string?> PredictRoute { get; private set; } = null!;
@@ -149,11 +167,35 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources
 
     public sealed class VertexModelDeploymentArgs : global::Pulumi.ResourceArgs
     {
+        [Input("args")]
+        private InputList<string>? _args;
+
+        /// <summary>
+        /// Dockerized model server command line arguments
+        /// </summary>
+        public InputList<string> Args
+        {
+            get => _args ?? (_args = new InputList<string>());
+            set => _args = value;
+        }
+
         /// <summary>
         /// Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
         /// </summary>
         [Input("endpointModelDeployment")]
         public Input<Inputs.EndpointModelDeploymentArgsArgs>? EndpointModelDeployment { get; set; }
+
+        [Input("env")]
+        private InputMap<string>? _env;
+
+        /// <summary>
+        /// Environment variables
+        /// </summary>
+        public InputMap<string> Env
+        {
+            get => _env ?? (_env = new InputMap<string>());
+            set => _env = value;
+        }
 
         [Input("healthRoute")]
         public Input<string>? HealthRoute { get; set; }
@@ -199,6 +241,12 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources
         /// </summary>
         [Input("modelPredictionOutputSchemaUri")]
         public Input<string>? ModelPredictionOutputSchemaUri { get; set; }
+
+        /// <summary>
+        /// Port for the model server. Defaults to 8080.
+        /// </summary>
+        [Input("port")]
+        public Input<int>? Port { get; set; }
 
         [Input("predictRoute")]
         public Input<string>? PredictRoute { get; set; }

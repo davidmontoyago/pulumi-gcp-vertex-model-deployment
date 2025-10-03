@@ -24,6 +24,9 @@ type ModelUpload struct {
 	ModelPredictionBehaviorSchemaURI string
 	PredictRoute                     string
 	HealthRoute                      string
+	Args                             []string
+	EnvVars                          map[string]string
+	Port                             int32
 }
 
 // ModelUploader interface defines operations for uploading models.
@@ -53,15 +56,30 @@ func NewVertexModelUpload(_ context.Context, modelClient VertexModelClient, proj
 // Upload uploads a model to Vertex AI and returns the model name.
 func (u *VertexModelUpload) Upload(ctx context.Context, params ModelUpload) (string, error) {
 
-	predictionSchema := &aiplatformpb.PredictSchemata{
+	predictionSchema := &aiplatformpb.PredictSchemata{}
+	if params.ModelPredictionInputSchemaURI != "" {
 		// Schema for the model input
-		InstanceSchemaUri: params.ModelPredictionInputSchemaURI,
+		predictionSchema.InstanceSchemaUri = params.ModelPredictionInputSchemaURI
+	}
+	if params.ModelPredictionOutputSchemaURI != "" {
 		// Schema for the model output
-		PredictionSchemaUri: params.ModelPredictionOutputSchemaURI,
+		predictionSchema.PredictionSchemaUri = params.ModelPredictionOutputSchemaURI
 	}
 	if params.ModelPredictionBehaviorSchemaURI != "" {
 		// Schema for the model inference behavior. Optional depending on the model.
 		predictionSchema.ParametersSchemaUri = params.ModelPredictionBehaviorSchemaURI
+	}
+
+	envVars := []*aiplatformpb.EnvVar{}
+	for name, value := range params.EnvVars {
+		envVars = append(envVars, &aiplatformpb.EnvVar{
+			Name:  name,
+			Value: value,
+		})
+	}
+	modelServerPort := params.Port
+	if modelServerPort == 0 {
+		modelServerPort = 8080
 	}
 
 	modelArgs := &aiplatformpb.Model{
@@ -69,11 +87,12 @@ func (u *VertexModelUpload) Upload(ctx context.Context, params ModelUpload) (str
 		Description: "Uploaded model for " + params.ModelImageURL,
 		ContainerSpec: &aiplatformpb.ModelContainerSpec{
 			ImageUri: params.ModelImageURL,
-			Args: []string{
-				"--allow_precompilation=false",
-				"--disable_optimizer=true",
-				"--saved_model_tags='serve,tpu'",
-				"--use_tfrt=true",
+			Args:     params.Args,
+			Env:      envVars,
+			Ports: []*aiplatformpb.Port{
+				{
+					ContainerPort: modelServerPort,
+				},
 			},
 		},
 		Labels:          u.labels,

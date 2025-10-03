@@ -7,7 +7,9 @@ import com.davidmontoyago.gcpvertexmodeldeployment.resources.inputs.EndpointMode
 import com.pulumi.core.Output;
 import com.pulumi.core.annotations.Import;
 import com.pulumi.exceptions.MissingRequiredPropertyException;
+import java.lang.Integer;
 import java.lang.String;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -17,6 +19,21 @@ import javax.annotation.Nullable;
 public final class VertexModelDeploymentArgs extends com.pulumi.resources.ResourceArgs {
 
     public static final VertexModelDeploymentArgs Empty = new VertexModelDeploymentArgs();
+
+    /**
+     * Dockerized model server command line arguments
+     * 
+     */
+    @Import(name="args")
+    private @Nullable Output<List<String>> args;
+
+    /**
+     * @return Dockerized model server command line arguments
+     * 
+     */
+    public Optional<Output<List<String>>> args() {
+        return Optional.ofNullable(this.args);
+    }
 
     /**
      * Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
@@ -31,6 +48,21 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
      */
     public Optional<Output<EndpointModelDeploymentArgsArgs>> endpointModelDeployment() {
         return Optional.ofNullable(this.endpointModelDeployment);
+    }
+
+    /**
+     * Environment variables
+     * 
+     */
+    @Import(name="env")
+    private @Nullable Output<Map<String,String>> env;
+
+    /**
+     * @return Environment variables
+     * 
+     */
+    public Optional<Output<Map<String,String>>> env() {
+        return Optional.ofNullable(this.env);
     }
 
     @Import(name="healthRoute")
@@ -130,6 +162,21 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
         return Optional.ofNullable(this.modelPredictionOutputSchemaUri);
     }
 
+    /**
+     * Port for the model server. Defaults to 8080.
+     * 
+     */
+    @Import(name="port")
+    private @Nullable Output<Integer> port;
+
+    /**
+     * @return Port for the model server. Defaults to 8080.
+     * 
+     */
+    public Optional<Output<Integer>> port() {
+        return Optional.ofNullable(this.port);
+    }
+
     @Import(name="predictRoute")
     private @Nullable Output<String> predictRoute;
 
@@ -185,7 +232,9 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
     private VertexModelDeploymentArgs() {}
 
     private VertexModelDeploymentArgs(VertexModelDeploymentArgs $) {
+        this.args = $.args;
         this.endpointModelDeployment = $.endpointModelDeployment;
+        this.env = $.env;
         this.healthRoute = $.healthRoute;
         this.labels = $.labels;
         this.modelArtifactsBucketUri = $.modelArtifactsBucketUri;
@@ -193,6 +242,7 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
         this.modelPredictionBehaviorSchemaUri = $.modelPredictionBehaviorSchemaUri;
         this.modelPredictionInputSchemaUri = $.modelPredictionInputSchemaUri;
         this.modelPredictionOutputSchemaUri = $.modelPredictionOutputSchemaUri;
+        this.port = $.port;
         this.predictRoute = $.predictRoute;
         this.projectId = $.projectId;
         this.region = $.region;
@@ -218,6 +268,37 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
         }
 
         /**
+         * @param args Dockerized model server command line arguments
+         * 
+         * @return builder
+         * 
+         */
+        public Builder args(@Nullable Output<List<String>> args) {
+            $.args = args;
+            return this;
+        }
+
+        /**
+         * @param args Dockerized model server command line arguments
+         * 
+         * @return builder
+         * 
+         */
+        public Builder args(List<String> args) {
+            return args(Output.of(args));
+        }
+
+        /**
+         * @param args Dockerized model server command line arguments
+         * 
+         * @return builder
+         * 
+         */
+        public Builder args(String... args) {
+            return args(List.of(args));
+        }
+
+        /**
          * @param endpointModelDeployment Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
          * 
          * @return builder
@@ -236,6 +317,27 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
          */
         public Builder endpointModelDeployment(EndpointModelDeploymentArgsArgs endpointModelDeployment) {
             return endpointModelDeployment(Output.of(endpointModelDeployment));
+        }
+
+        /**
+         * @param env Environment variables
+         * 
+         * @return builder
+         * 
+         */
+        public Builder env(@Nullable Output<Map<String,String>> env) {
+            $.env = env;
+            return this;
+        }
+
+        /**
+         * @param env Environment variables
+         * 
+         * @return builder
+         * 
+         */
+        public Builder env(Map<String,String> env) {
+            return env(Output.of(env));
         }
 
         public Builder healthRoute(@Nullable Output<String> healthRoute) {
@@ -371,6 +473,27 @@ public final class VertexModelDeploymentArgs extends com.pulumi.resources.Resour
          */
         public Builder modelPredictionOutputSchemaUri(String modelPredictionOutputSchemaUri) {
             return modelPredictionOutputSchemaUri(Output.of(modelPredictionOutputSchemaUri));
+        }
+
+        /**
+         * @param port Port for the model server. Defaults to 8080.
+         * 
+         * @return builder
+         * 
+         */
+        public Builder port(@Nullable Output<Integer> port) {
+            $.port = port;
+            return this;
+        }
+
+        /**
+         * @param port Port for the model server. Defaults to 8080.
+         * 
+         * @return builder
+         * 
+         */
+        public Builder port(Integer port) {
+            return port(Output.of(port));
         }
 
         public Builder predictRoute(@Nullable Output<String> predictRoute) {

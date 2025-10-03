@@ -96,6 +96,9 @@ func (v VertexModelDeployment) Create(
 		ServiceAccountEmail:              req.Inputs.ServiceAccount,
 		PredictRoute:                     req.Inputs.PredictRoute,
 		HealthRoute:                      req.Inputs.HealthRoute,
+		Args:                             req.Inputs.Args,
+		EnvVars:                          req.Inputs.EnvVars,
+		Port:                             req.Inputs.Port,
 	})
 	if err != nil {
 		return infer.CreateResponse[VertexModelDeploymentState]{},
@@ -477,11 +480,13 @@ func (v VertexModelDeployment) getEndpointClientFactory() services.EndpointClien
 // toEndpointDeploymentConfig converts EndpointModelDeploymentArgs to services.EndpointModelDeploymentConfig
 func toEndpointDeploymentConfig(args *EndpointModelDeploymentArgs) services.EndpointModelDeploymentConfig {
 	return services.EndpointModelDeploymentConfig{
-		EndpointID:     args.EndpointID,
-		MachineType:    args.MachineType,
-		MinReplicas:    safeIntToInt32(args.MinReplicas),
-		MaxReplicas:    safeIntToInt32(args.MaxReplicas),
-		TrafficPercent: safeIntToInt32(args.TrafficPercent),
+		EndpointID:       args.EndpointID,
+		MachineType:      args.MachineType,
+		AcceleratorType:  args.AcceleratorType,
+		AcceleratorCount: args.AcceleratorCount,
+		MinReplicas:      safeIntToInt32(args.MinReplicas),
+		MaxReplicas:      safeIntToInt32(args.MaxReplicas),
+		TrafficPercent:   safeIntToInt32(args.TrafficPercent),
 	}
 }
 

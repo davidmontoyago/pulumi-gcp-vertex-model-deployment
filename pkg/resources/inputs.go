@@ -24,6 +24,10 @@ type VertexModelDeploymentArgs struct {
 	// Not required for Endpoints.
 	HealthRoute string `pulumi:"healthRoute,optional"`
 
+	Args    []string          `pulumi:"args,optional"`
+	EnvVars map[string]string `pulumi:"env,optional"`
+	Port    int32             `pulumi:"port,optional"`
+
 	// Target endpoint for the model deployment.
 	//
 	// Set only when serving the model on a Vertex AI Endpoint.
@@ -62,6 +66,9 @@ func (args *VertexModelDeploymentArgs) Annotate(annotator infer.Annotator) {
 	annotator.Describe(&args.ModelPredictionOutputSchemaURI, "Bucket URI to the schema for the model output")
 	annotator.Describe(&args.ModelPredictionBehaviorSchemaURI, "Bucket URI to the schema for the model inference behavior")
 	annotator.Describe(&args.ServiceAccount, "Service account for the model. If ModelImage is pointing to a private registry, this service account must have read access to the registry.")
+	annotator.Describe(&args.Args, "Dockerized model server command line arguments")
+	annotator.Describe(&args.EnvVars, "Environment variables")
+	annotator.Describe(&args.Port, "Port for the model server. Defaults to 8080.")
 	annotator.Describe(&args.EndpointModelDeployment, "Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.")
 	annotator.Describe(&args.Labels, "Labels for the deployment")
 }

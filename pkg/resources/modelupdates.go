@@ -26,12 +26,27 @@ func updateRegistryModel(ctx context.Context, req infer.UpdateRequest[VertexMode
 	// Build container spec (consistent with model creation)
 	containerSpec := &aiplatformpb.ModelContainerSpec{
 		ImageUri: req.Inputs.ModelImageURL,
-		// TODO add args input parameter
-		Args: []string{
-			"--allow_precompilation=false",
-			"--disable_optimizer=true",
-			"--saved_model_tags='serve,tpu'",
-			"--use_tfrt=true",
+		Args:     req.Inputs.Args,
+	}
+
+	// Add environment variables
+	envVars := []*aiplatformpb.EnvVar{}
+	for name, value := range req.Inputs.EnvVars {
+		envVars = append(envVars, &aiplatformpb.EnvVar{
+			Name:  name,
+			Value: value,
+		})
+	}
+	containerSpec.Env = envVars
+
+	// Add port configuration
+	modelServerPort := req.Inputs.Port
+	if modelServerPort == 0 {
+		modelServerPort = 8080
+	}
+	containerSpec.Ports = []*aiplatformpb.Port{
+		{
+			ContainerPort: modelServerPort,
 		},
 	}
 	if req.Inputs.PredictRoute != "" {
@@ -92,6 +107,24 @@ func setModelStateUpdates(req infer.UpdateRequest[VertexModelDeploymentArgs, Ver
 		if updatedModel.ContainerSpec.HealthRoute != "" {
 			updatedState.HealthRoute = updatedModel.ContainerSpec.HealthRoute
 		}
+
+		// Update container args
+		if len(updatedModel.ContainerSpec.Args) > 0 {
+			updatedState.Args = updatedModel.ContainerSpec.Args
+		}
+
+		// Update environment variables
+		if len(updatedModel.ContainerSpec.Env) > 0 {
+			updatedState.EnvVars = make(map[string]string)
+			for _, env := range updatedModel.ContainerSpec.Env {
+				updatedState.EnvVars[env.Name] = env.Value
+			}
+		}
+
+		// Update port
+		if len(updatedModel.ContainerSpec.Ports) > 0 {
+			updatedState.Port = updatedModel.ContainerSpec.Ports[0].ContainerPort
+		}
 	}
 
 	// Update predict schemata fields if available
@@ -148,6 +181,24 @@ func collectUpdates(req infer.UpdateRequest[VertexModelDeploymentArgs, VertexMod
 		updatePathsMap["container_spec"] = true
 	}
 
+	// Check if container args have changed
+	if !slicesEqual(req.Inputs.Args, req.State.Args) {
+		needsUpdate = true
+		updatePathsMap["container_spec"] = true
+	}
+
+	// Check if environment variables have changed
+	if !mapsEqual(req.Inputs.EnvVars, req.State.EnvVars) {
+		needsUpdate = true
+		updatePathsMap["container_spec"] = true
+	}
+
+	// Check if port has changed
+	if req.Inputs.Port != req.State.Port {
+		needsUpdate = true
+		updatePathsMap["container_spec"] = true
+	}
+
 	// Convert map to slice
 	updatePaths := make([]string, 0, len(updatePathsMap))
 	for path := range updatePathsMap {
@@ -155,4 +206,17 @@ func collectUpdates(req infer.UpdateRequest[VertexModelDeploymentArgs, VertexMod
 	}
 
 	return needsUpdate, updatePaths
+}
+
+// slicesEqual compares two string slices for equality
+func slicesEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
 }

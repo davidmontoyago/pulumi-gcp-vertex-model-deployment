@@ -48,6 +48,9 @@ func TestVertexModelDeploymentCreate_ModelUploadAndDeployRequests(t *testing.T) 
 	trafficPercent := 100
 	serviceAccount := "test-service-account@test-project.iam.gserviceaccount.com"
 	resourceName := "test-model-deployment"
+	containerArgs := []string{"--model-name", "custom-model", "--batch-size", "32"}
+	containerEnvVars := map[string]string{"MODEL_ENV": "production", "LOG_LEVEL": "info"}
+	containerPort := int32(9090)
 
 	// Variables to capture request parameters
 	var capturedUploadRequest *aiplatformpb.UploadModelRequest
@@ -64,6 +67,9 @@ func TestVertexModelDeploymentCreate_ModelUploadAndDeployRequests(t *testing.T) 
 			ModelPredictionInputSchemaURI:    modelPredictionInputSchemaURI,
 			ModelPredictionOutputSchemaURI:   modelPredictionOutputSchemaURI,
 			ModelPredictionBehaviorSchemaURI: modelPredictionBehaviorSchemaURI,
+			Args:                             containerArgs,
+			EnvVars:                          containerEnvVars,
+			Port:                             containerPort,
 			EndpointModelDeployment: &EndpointModelDeploymentArgs{
 				EndpointID:     endpointID,
 				MachineType:    machineType,
@@ -140,6 +146,41 @@ func TestVertexModelDeploymentCreate_ModelUploadAndDeployRequests(t *testing.T) 
 
 	if model.ContainerSpec.ImageUri != modelImageURL {
 		t.Errorf("Expected ImageUri %s, got %s", modelImageURL, model.ContainerSpec.ImageUri)
+	}
+
+	// Assert container arguments
+	if len(model.ContainerSpec.Args) != len(containerArgs) {
+		t.Errorf("Expected %d container args, got %d", len(containerArgs), len(model.ContainerSpec.Args))
+	} else {
+		for i, expectedArg := range containerArgs {
+			if model.ContainerSpec.Args[i] != expectedArg {
+				t.Errorf("Expected container arg[%d] %s, got %s", i, expectedArg, model.ContainerSpec.Args[i])
+			}
+		}
+	}
+
+	// Assert environment variables
+	if len(model.ContainerSpec.Env) != len(containerEnvVars) {
+		t.Errorf("Expected %d environment variables, got %d", len(containerEnvVars), len(model.ContainerSpec.Env))
+	} else {
+		envMap := make(map[string]string)
+		for _, env := range model.ContainerSpec.Env {
+			envMap[env.Name] = env.Value
+		}
+		for expectedName, expectedValue := range containerEnvVars {
+			if actualValue, exists := envMap[expectedName]; !exists {
+				t.Errorf("Expected environment variable %s not found", expectedName)
+			} else if actualValue != expectedValue {
+				t.Errorf("Expected environment variable %s=%s, got %s", expectedName, expectedValue, actualValue)
+			}
+		}
+	}
+
+	// Assert container port
+	if len(model.ContainerSpec.Ports) != 1 {
+		t.Errorf("Expected 1 container port, got %d", len(model.ContainerSpec.Ports))
+	} else if model.ContainerSpec.Ports[0].ContainerPort != containerPort {
+		t.Errorf("Expected container port %d, got %d", containerPort, model.ContainerSpec.Ports[0].ContainerPort)
 	}
 
 	// Assert artifact URI
@@ -243,6 +284,8 @@ func TestVertexModelDeploymentCreate_ModelUploadOnly(t *testing.T) {
 	healthRoute := testHealthRoute
 	serviceAccount := "test-service-account@test-project.iam.gserviceaccount.com"
 	resourceName := "test-model-upload-only"
+	// Test default port behavior - not setting Port should default to 8080
+	defaultPort := int32(8080)
 
 	// Variables to capture request parameters
 	var capturedUploadRequest *aiplatformpb.UploadModelRequest
@@ -313,6 +356,13 @@ func TestVertexModelDeploymentCreate_ModelUploadOnly(t *testing.T) {
 
 	if model.ContainerSpec.HealthRoute != healthRoute {
 		t.Errorf("Expected HealthRoute %s, got %s", healthRoute, model.ContainerSpec.HealthRoute)
+	}
+
+	// Assert default port behavior (should default to 8080 when not specified)
+	if len(model.ContainerSpec.Ports) != 1 {
+		t.Errorf("Expected 1 container port, got %d", len(model.ContainerSpec.Ports))
+	} else if model.ContainerSpec.Ports[0].ContainerPort != defaultPort {
+		t.Errorf("Expected default container port %d, got %d", defaultPort, model.ContainerSpec.Ports[0].ContainerPort)
 	}
 
 	// DeployModel should not have been called (verified by the mock error above)
@@ -769,6 +819,9 @@ func TestVertexModelDeploymentUpdate_ModelOnly(t *testing.T) {
 	updatedPredictRoute := testPredictRoute
 	updatedHealthRoute := testHealthRoute
 	updatedLabels := map[string]string{"env": testEnv, "component": "ml", "version": "v2"}
+	updatedContainerArgs := []string{"--model-name", "updated-model", "--batch-size", "64"}
+	updatedContainerEnvVars := map[string]string{"MODEL_ENV": "staging", "LOG_LEVEL": "debug", "CACHE_SIZE": "1024"}
+	updatedContainerPort := int32(9091)
 
 	// Variables to capture request parameters
 	var capturedUpdateRequest *aiplatformpb.UpdateModelRequest
@@ -809,6 +862,9 @@ func TestVertexModelDeploymentUpdate_ModelOnly(t *testing.T) {
 			ModelPredictionBehaviorSchemaURI: updatedModelPredictionBehaviorSchemaURI,
 			PredictRoute:                     updatedPredictRoute,
 			HealthRoute:                      updatedHealthRoute,
+			Args:                             updatedContainerArgs,
+			EnvVars:                          updatedContainerEnvVars,
+			Port:                             updatedContainerPort,
 			Labels:                           updatedLabels,
 			// EndpointModelDeployment is not set - model update only
 		},
@@ -824,6 +880,15 @@ func TestVertexModelDeploymentUpdate_ModelOnly(t *testing.T) {
 			ImageUri:     updatedModelImageURL,
 			PredictRoute: updatedPredictRoute,
 			HealthRoute:  updatedHealthRoute,
+			Args:         updatedContainerArgs,
+			Env: []*aiplatformpb.EnvVar{
+				{Name: "MODEL_ENV", Value: "staging"},
+				{Name: "LOG_LEVEL", Value: "debug"},
+				{Name: "CACHE_SIZE", Value: "1024"},
+			},
+			Ports: []*aiplatformpb.Port{
+				{ContainerPort: updatedContainerPort},
+			},
 		},
 		PredictSchemata: &aiplatformpb.PredictSchemata{
 			InstanceSchemaUri:   updatedModelPredictionInputSchemaURI,
@@ -903,6 +968,41 @@ func TestVertexModelDeploymentUpdate_ModelOnly(t *testing.T) {
 	}
 	if capturedUpdateRequest.Model.ContainerSpec.HealthRoute != updatedHealthRoute {
 		t.Errorf("Expected HealthRoute %s, got %s", updatedHealthRoute, capturedUpdateRequest.Model.ContainerSpec.HealthRoute)
+	}
+
+	// Assert updated container arguments
+	if len(capturedUpdateRequest.Model.ContainerSpec.Args) != len(updatedContainerArgs) {
+		t.Errorf("Expected %d container args, got %d", len(updatedContainerArgs), len(capturedUpdateRequest.Model.ContainerSpec.Args))
+	} else {
+		for i, expectedArg := range updatedContainerArgs {
+			if capturedUpdateRequest.Model.ContainerSpec.Args[i] != expectedArg {
+				t.Errorf("Expected container arg[%d] %s, got %s", i, expectedArg, capturedUpdateRequest.Model.ContainerSpec.Args[i])
+			}
+		}
+	}
+
+	// Assert updated environment variables
+	if len(capturedUpdateRequest.Model.ContainerSpec.Env) != len(updatedContainerEnvVars) {
+		t.Errorf("Expected %d environment variables, got %d", len(updatedContainerEnvVars), len(capturedUpdateRequest.Model.ContainerSpec.Env))
+	} else {
+		envMap := make(map[string]string)
+		for _, env := range capturedUpdateRequest.Model.ContainerSpec.Env {
+			envMap[env.Name] = env.Value
+		}
+		for expectedName, expectedValue := range updatedContainerEnvVars {
+			if actualValue, exists := envMap[expectedName]; !exists {
+				t.Errorf("Expected environment variable %s not found", expectedName)
+			} else if actualValue != expectedValue {
+				t.Errorf("Expected environment variable %s=%s, got %s", expectedName, expectedValue, actualValue)
+			}
+		}
+	}
+
+	// Assert updated container port
+	if len(capturedUpdateRequest.Model.ContainerSpec.Ports) != 1 {
+		t.Errorf("Expected 1 container port, got %d", len(capturedUpdateRequest.Model.ContainerSpec.Ports))
+	} else if capturedUpdateRequest.Model.ContainerSpec.Ports[0].ContainerPort != updatedContainerPort {
+		t.Errorf("Expected container port %d, got %d", updatedContainerPort, capturedUpdateRequest.Model.ContainerSpec.Ports[0].ContainerPort)
 	}
 
 	// Assert prediction schemas

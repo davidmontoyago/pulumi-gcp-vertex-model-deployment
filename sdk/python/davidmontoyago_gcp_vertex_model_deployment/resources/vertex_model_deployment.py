@@ -25,13 +25,16 @@ class VertexModelDeploymentArgs:
                  project_id: pulumi.Input[_builtins.str],
                  region: pulumi.Input[_builtins.str],
                  service_account: pulumi.Input[_builtins.str],
+                 args: Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]] = None,
                  endpoint_model_deployment: Optional[pulumi.Input['EndpointModelDeploymentArgsArgs']] = None,
+                 env: Optional[pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]]] = None,
                  health_route: Optional[pulumi.Input[_builtins.str]] = None,
                  labels: Optional[pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]]] = None,
                  model_artifacts_bucket_uri: Optional[pulumi.Input[_builtins.str]] = None,
                  model_prediction_behavior_schema_uri: Optional[pulumi.Input[_builtins.str]] = None,
                  model_prediction_input_schema_uri: Optional[pulumi.Input[_builtins.str]] = None,
                  model_prediction_output_schema_uri: Optional[pulumi.Input[_builtins.str]] = None,
+                 port: Optional[pulumi.Input[_builtins.int]] = None,
                  predict_route: Optional[pulumi.Input[_builtins.str]] = None):
         """
         The set of arguments for constructing a VertexModelDeployment resource.
@@ -39,19 +42,26 @@ class VertexModelDeploymentArgs:
         :param pulumi.Input[_builtins.str] project_id: Google Cloud Project ID
         :param pulumi.Input[_builtins.str] region: Google Cloud region
         :param pulumi.Input[_builtins.str] service_account: Service account for the model. If ModelImage is pointing to a private registry, this service account must have read access to the registry.
+        :param pulumi.Input[Sequence[pulumi.Input[_builtins.str]]] args: Dockerized model server command line arguments
         :param pulumi.Input['EndpointModelDeploymentArgsArgs'] endpoint_model_deployment: Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
+        :param pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]] env: Environment variables
         :param pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]] labels: Labels for the deployment
         :param pulumi.Input[_builtins.str] model_artifacts_bucket_uri: Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
         :param pulumi.Input[_builtins.str] model_prediction_behavior_schema_uri: Bucket URI to the schema for the model inference behavior
         :param pulumi.Input[_builtins.str] model_prediction_input_schema_uri: Bucket URI to the schema for the model input
         :param pulumi.Input[_builtins.str] model_prediction_output_schema_uri: Bucket URI to the schema for the model output
+        :param pulumi.Input[_builtins.int] port: Port for the model server. Defaults to 8080.
         """
         pulumi.set(__self__, "model_image_url", model_image_url)
         pulumi.set(__self__, "project_id", project_id)
         pulumi.set(__self__, "region", region)
         pulumi.set(__self__, "service_account", service_account)
+        if args is not None:
+            pulumi.set(__self__, "args", args)
         if endpoint_model_deployment is not None:
             pulumi.set(__self__, "endpoint_model_deployment", endpoint_model_deployment)
+        if env is not None:
+            pulumi.set(__self__, "env", env)
         if health_route is not None:
             pulumi.set(__self__, "health_route", health_route)
         if labels is not None:
@@ -64,6 +74,8 @@ class VertexModelDeploymentArgs:
             pulumi.set(__self__, "model_prediction_input_schema_uri", model_prediction_input_schema_uri)
         if model_prediction_output_schema_uri is not None:
             pulumi.set(__self__, "model_prediction_output_schema_uri", model_prediction_output_schema_uri)
+        if port is not None:
+            pulumi.set(__self__, "port", port)
         if predict_route is not None:
             pulumi.set(__self__, "predict_route", predict_route)
 
@@ -116,6 +128,18 @@ class VertexModelDeploymentArgs:
         pulumi.set(self, "service_account", value)
 
     @_builtins.property
+    @pulumi.getter
+    def args(self) -> Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]]:
+        """
+        Dockerized model server command line arguments
+        """
+        return pulumi.get(self, "args")
+
+    @args.setter
+    def args(self, value: Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]]):
+        pulumi.set(self, "args", value)
+
+    @_builtins.property
     @pulumi.getter(name="endpointModelDeployment")
     def endpoint_model_deployment(self) -> Optional[pulumi.Input['EndpointModelDeploymentArgsArgs']]:
         """
@@ -126,6 +150,18 @@ class VertexModelDeploymentArgs:
     @endpoint_model_deployment.setter
     def endpoint_model_deployment(self, value: Optional[pulumi.Input['EndpointModelDeploymentArgsArgs']]):
         pulumi.set(self, "endpoint_model_deployment", value)
+
+    @_builtins.property
+    @pulumi.getter
+    def env(self) -> Optional[pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]]]:
+        """
+        Environment variables
+        """
+        return pulumi.get(self, "env")
+
+    @env.setter
+    def env(self, value: Optional[pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]]]):
+        pulumi.set(self, "env", value)
 
     @_builtins.property
     @pulumi.getter(name="healthRoute")
@@ -197,6 +233,18 @@ class VertexModelDeploymentArgs:
         pulumi.set(self, "model_prediction_output_schema_uri", value)
 
     @_builtins.property
+    @pulumi.getter
+    def port(self) -> Optional[pulumi.Input[_builtins.int]]:
+        """
+        Port for the model server. Defaults to 8080.
+        """
+        return pulumi.get(self, "port")
+
+    @port.setter
+    def port(self, value: Optional[pulumi.Input[_builtins.int]]):
+        pulumi.set(self, "port", value)
+
+    @_builtins.property
     @pulumi.getter(name="predictRoute")
     def predict_route(self) -> Optional[pulumi.Input[_builtins.str]]:
         return pulumi.get(self, "predict_route")
@@ -212,7 +260,9 @@ class VertexModelDeployment(pulumi.CustomResource):
     def __init__(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
+                 args: Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]] = None,
                  endpoint_model_deployment: Optional[pulumi.Input[Union['EndpointModelDeploymentArgsArgs', 'EndpointModelDeploymentArgsArgsDict']]] = None,
+                 env: Optional[pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]]] = None,
                  health_route: Optional[pulumi.Input[_builtins.str]] = None,
                  labels: Optional[pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]]] = None,
                  model_artifacts_bucket_uri: Optional[pulumi.Input[_builtins.str]] = None,
@@ -220,6 +270,7 @@ class VertexModelDeployment(pulumi.CustomResource):
                  model_prediction_behavior_schema_uri: Optional[pulumi.Input[_builtins.str]] = None,
                  model_prediction_input_schema_uri: Optional[pulumi.Input[_builtins.str]] = None,
                  model_prediction_output_schema_uri: Optional[pulumi.Input[_builtins.str]] = None,
+                 port: Optional[pulumi.Input[_builtins.int]] = None,
                  predict_route: Optional[pulumi.Input[_builtins.str]] = None,
                  project_id: Optional[pulumi.Input[_builtins.str]] = None,
                  region: Optional[pulumi.Input[_builtins.str]] = None,
@@ -230,13 +281,16 @@ class VertexModelDeployment(pulumi.CustomResource):
 
         :param str resource_name: The name of the resource.
         :param pulumi.ResourceOptions opts: Options for the resource.
+        :param pulumi.Input[Sequence[pulumi.Input[_builtins.str]]] args: Dockerized model server command line arguments
         :param pulumi.Input[Union['EndpointModelDeploymentArgsArgs', 'EndpointModelDeploymentArgsArgsDict']] endpoint_model_deployment: Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
+        :param pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]] env: Environment variables
         :param pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]] labels: Labels for the deployment
         :param pulumi.Input[_builtins.str] model_artifacts_bucket_uri: Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
         :param pulumi.Input[_builtins.str] model_image_url: Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers
         :param pulumi.Input[_builtins.str] model_prediction_behavior_schema_uri: Bucket URI to the schema for the model inference behavior
         :param pulumi.Input[_builtins.str] model_prediction_input_schema_uri: Bucket URI to the schema for the model input
         :param pulumi.Input[_builtins.str] model_prediction_output_schema_uri: Bucket URI to the schema for the model output
+        :param pulumi.Input[_builtins.int] port: Port for the model server. Defaults to 8080.
         :param pulumi.Input[_builtins.str] project_id: Google Cloud Project ID
         :param pulumi.Input[_builtins.str] region: Google Cloud region
         :param pulumi.Input[_builtins.str] service_account: Service account for the model. If ModelImage is pointing to a private registry, this service account must have read access to the registry.
@@ -265,7 +319,9 @@ class VertexModelDeployment(pulumi.CustomResource):
     def _internal_init(__self__,
                  resource_name: str,
                  opts: Optional[pulumi.ResourceOptions] = None,
+                 args: Optional[pulumi.Input[Sequence[pulumi.Input[_builtins.str]]]] = None,
                  endpoint_model_deployment: Optional[pulumi.Input[Union['EndpointModelDeploymentArgsArgs', 'EndpointModelDeploymentArgsArgsDict']]] = None,
+                 env: Optional[pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]]] = None,
                  health_route: Optional[pulumi.Input[_builtins.str]] = None,
                  labels: Optional[pulumi.Input[Mapping[str, pulumi.Input[_builtins.str]]]] = None,
                  model_artifacts_bucket_uri: Optional[pulumi.Input[_builtins.str]] = None,
@@ -273,6 +329,7 @@ class VertexModelDeployment(pulumi.CustomResource):
                  model_prediction_behavior_schema_uri: Optional[pulumi.Input[_builtins.str]] = None,
                  model_prediction_input_schema_uri: Optional[pulumi.Input[_builtins.str]] = None,
                  model_prediction_output_schema_uri: Optional[pulumi.Input[_builtins.str]] = None,
+                 port: Optional[pulumi.Input[_builtins.int]] = None,
                  predict_route: Optional[pulumi.Input[_builtins.str]] = None,
                  project_id: Optional[pulumi.Input[_builtins.str]] = None,
                  region: Optional[pulumi.Input[_builtins.str]] = None,
@@ -286,7 +343,9 @@ class VertexModelDeployment(pulumi.CustomResource):
                 raise TypeError('__props__ is only valid when passed in combination with a valid opts.id to get an existing resource')
             __props__ = VertexModelDeploymentArgs.__new__(VertexModelDeploymentArgs)
 
+            __props__.__dict__["args"] = args
             __props__.__dict__["endpoint_model_deployment"] = endpoint_model_deployment
+            __props__.__dict__["env"] = env
             __props__.__dict__["health_route"] = health_route
             __props__.__dict__["labels"] = labels
             __props__.__dict__["model_artifacts_bucket_uri"] = model_artifacts_bucket_uri
@@ -296,6 +355,7 @@ class VertexModelDeployment(pulumi.CustomResource):
             __props__.__dict__["model_prediction_behavior_schema_uri"] = model_prediction_behavior_schema_uri
             __props__.__dict__["model_prediction_input_schema_uri"] = model_prediction_input_schema_uri
             __props__.__dict__["model_prediction_output_schema_uri"] = model_prediction_output_schema_uri
+            __props__.__dict__["port"] = port
             __props__.__dict__["predict_route"] = predict_route
             if project_id is None and not opts.urn:
                 raise TypeError("Missing required property 'project_id'")
@@ -332,10 +392,12 @@ class VertexModelDeployment(pulumi.CustomResource):
 
         __props__ = VertexModelDeploymentArgs.__new__(VertexModelDeploymentArgs)
 
+        __props__.__dict__["args"] = None
         __props__.__dict__["create_time"] = None
         __props__.__dict__["deployed_model_id"] = None
         __props__.__dict__["endpoint_model_deployment"] = None
         __props__.__dict__["endpoint_name"] = None
+        __props__.__dict__["env"] = None
         __props__.__dict__["health_route"] = None
         __props__.__dict__["labels"] = None
         __props__.__dict__["model_artifacts_bucket_uri"] = None
@@ -344,11 +406,20 @@ class VertexModelDeployment(pulumi.CustomResource):
         __props__.__dict__["model_prediction_behavior_schema_uri"] = None
         __props__.__dict__["model_prediction_input_schema_uri"] = None
         __props__.__dict__["model_prediction_output_schema_uri"] = None
+        __props__.__dict__["port"] = None
         __props__.__dict__["predict_route"] = None
         __props__.__dict__["project_id"] = None
         __props__.__dict__["region"] = None
         __props__.__dict__["service_account"] = None
         return VertexModelDeployment(resource_name, opts=opts, __props__=__props__)
+
+    @_builtins.property
+    @pulumi.getter
+    def args(self) -> pulumi.Output[Optional[Sequence[_builtins.str]]]:
+        """
+        Dockerized model server command line arguments
+        """
+        return pulumi.get(self, "args")
 
     @_builtins.property
     @pulumi.getter(name="createTime")
@@ -381,6 +452,14 @@ class VertexModelDeployment(pulumi.CustomResource):
         Full name of the endpoint
         """
         return pulumi.get(self, "endpoint_name")
+
+    @_builtins.property
+    @pulumi.getter
+    def env(self) -> pulumi.Output[Optional[Mapping[str, _builtins.str]]]:
+        """
+        Environment variables
+        """
+        return pulumi.get(self, "env")
 
     @_builtins.property
     @pulumi.getter(name="healthRoute")
@@ -439,6 +518,14 @@ class VertexModelDeployment(pulumi.CustomResource):
         Bucket URI to the schema for the model output
         """
         return pulumi.get(self, "model_prediction_output_schema_uri")
+
+    @_builtins.property
+    @pulumi.getter
+    def port(self) -> pulumi.Output[Optional[_builtins.int]]:
+        """
+        Port for the model server. Defaults to 8080.
+        """
+        return pulumi.get(self, "port")
 
     @_builtins.property
     @pulumi.getter(name="predictRoute")

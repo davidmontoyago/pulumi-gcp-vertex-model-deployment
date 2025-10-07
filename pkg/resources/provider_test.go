@@ -1110,7 +1110,9 @@ func TestVertexModelDeploymentUpdate_ModelOnly(t *testing.T) {
 func TestVertexModelDeploymentRead_ModelWithEndpoint(t *testing.T) {
 	ctx := context.Background()
 
-	// Test state for model with endpoint deployment read
+	// Test state for model with endpoint deployment read using SHORT endpoint name
+	// This test verifies that when the state contains a short endpoint name,
+	// the VertexEndpointModelGetter properly converts it to a fully qualified name for the API call
 	projectID := testProjectID
 	region := testRegion
 	endpointID := testEndpointID
@@ -1145,7 +1147,7 @@ func TestVertexModelDeploymentRead_ModelWithEndpoint(t *testing.T) {
 		},
 		ModelName:       modelName,
 		DeployedModelID: deployedModelID,
-		EndpointName:    testEndpointPath, // Use full path format
+		EndpointName:    endpointID, // Use SHORT endpoint name (just the ID) to test name conversion
 		CreateTime:      createTime,
 	}
 
@@ -1270,6 +1272,208 @@ func TestVertexModelDeploymentRead_ModelWithEndpoint(t *testing.T) {
 	}
 	if resultState.Labels["team"] != "ml" {
 		t.Errorf("Expected label team=ml, got %s", resultState.Labels["team"])
+	}
+
+	// Validate endpoint-related fields are updated from endpoint response
+	if resultState.EndpointName != fullEndpointName {
+		t.Errorf("Expected EndpointName %s, got %s", fullEndpointName, resultState.EndpointName)
+	}
+	if resultState.DeployedModelID != deployedModelID {
+		t.Errorf("Expected DeployedModelID %s, got %s", deployedModelID, resultState.DeployedModelID)
+	}
+
+	// Validate endpoint deployment configuration is updated from live endpoint
+	if resultState.EndpointModelDeployment == nil {
+		t.Fatal("EndpointModelDeployment should not be nil")
+	}
+	if resultState.EndpointModelDeployment.MachineType != machineType {
+		t.Errorf("Expected MachineType %s, got %s", machineType, resultState.EndpointModelDeployment.MachineType)
+	}
+	if resultState.EndpointModelDeployment.MinReplicas != int(minReplicas) {
+		t.Errorf("Expected MinReplicas %d, got %d", minReplicas, resultState.EndpointModelDeployment.MinReplicas)
+	}
+	if resultState.EndpointModelDeployment.MaxReplicas != int(maxReplicas) {
+		t.Errorf("Expected MaxReplicas %d, got %d", maxReplicas, resultState.EndpointModelDeployment.MaxReplicas)
+	}
+	if resultState.EndpointModelDeployment.TrafficPercent != int(trafficPercent) {
+		t.Errorf("Expected TrafficPercent %d, got %d", trafficPercent, resultState.EndpointModelDeployment.TrafficPercent)
+	}
+
+	// Validate original inputs are preserved
+	if result.Inputs.ProjectID != projectID {
+		t.Errorf("Expected Inputs.ProjectID %s, got %s", projectID, result.Inputs.ProjectID)
+	}
+	if result.Inputs.Region != region {
+		t.Errorf("Expected Inputs.Region %s, got %s", region, result.Inputs.Region)
+	}
+}
+
+//nolint:paralleltest,tparallel // Cannot run in parallel due to shared testFactoryRegistry
+func TestVertexModelDeploymentRead_ModelWithEndpointNameFullyQualified(t *testing.T) {
+	ctx := context.Background()
+
+	// Test state for model with endpoint deployment read using FULLY QUALIFIED endpoint name
+	// This test verifies that when the state already contains a fully qualified endpoint name,
+	// it is passed through correctly to the endpoint client
+	projectID := testProjectID
+	region := testRegion
+	endpointID := testEndpointID
+	fullEndpointName := testEndpointPath
+	modelName := testModelName
+	deployedModelID := "deployed-model-id-456"
+	modelImageURL := testModelImageURL
+	modelArtifactsBucketURI := testModelArtifactsBucketURI
+	modelPredictionInputSchemaURI := testModelPredictionInputSchemaURI
+	modelPredictionOutputSchemaURI := testModelPredictionOutputSchemaURI
+	machineType := "n1-standard-8"
+	minReplicas := int32(3)
+	maxReplicas := int32(10)
+	trafficPercent := int32(50)
+	createTime := testCreateTime
+
+	// Create initial state with endpoint deployment using FULLY QUALIFIED endpoint name
+	state := VertexModelDeploymentState{
+		VertexModelDeploymentArgs: VertexModelDeploymentArgs{
+			ProjectID:                     projectID,
+			Region:                        region,
+			ModelImageURL:                 "old-image-url", // Different from mock to test update
+			ModelArtifactsBucketURI:       "old-bucket-uri",
+			ModelPredictionInputSchemaURI: "old-input-schema",
+			EndpointModelDeployment: &EndpointModelDeploymentArgs{
+				EndpointID:     endpointID,
+				MachineType:    "old-machine-type", // Different from mock to test update
+				MinReplicas:    1,                  // Different from mock
+				MaxReplicas:    3,                  // Different from mock
+				TrafficPercent: 100,                // Different from mock
+			},
+		},
+		ModelName:       modelName,
+		DeployedModelID: deployedModelID,
+		EndpointName:    testEndpointPath, // Use FULLY QUALIFIED endpoint name - this is the key difference
+		CreateTime:      createTime,
+	}
+
+	// Mock model response
+	mockModel := &aiplatformpb.Model{
+		Name:        modelName,
+		ArtifactUri: modelArtifactsBucketURI,
+		ContainerSpec: &aiplatformpb.ModelContainerSpec{
+			ImageUri: modelImageURL,
+		},
+		PredictSchemata: &aiplatformpb.PredictSchemata{
+			InstanceSchemaUri:   modelPredictionInputSchemaURI,
+			PredictionSchemaUri: modelPredictionOutputSchemaURI,
+		},
+		Labels: map[string]string{"env": "staging", "team": "ai"},
+	}
+
+	// Mock endpoint response with deployed model
+	mockEndpoint := &aiplatformpb.Endpoint{
+		Name: fullEndpointName,
+		DeployedModels: []*aiplatformpb.DeployedModel{
+			{
+				Id: deployedModelID,
+				PredictionResources: &aiplatformpb.DeployedModel_DedicatedResources{
+					DedicatedResources: &aiplatformpb.DedicatedResources{
+						MachineSpec: &aiplatformpb.MachineSpec{
+							MachineType: machineType,
+						},
+						MinReplicaCount: minReplicas,
+						MaxReplicaCount: maxReplicas,
+					},
+				},
+			},
+		},
+		TrafficSplit: map[string]int32{
+			deployedModelID: trafficPercent,
+		},
+	}
+
+	req := infer.ReadRequest[VertexModelDeploymentArgs, VertexModelDeploymentState]{
+		ID:     "test-model-with-endpoint",
+		Inputs: state.VertexModelDeploymentArgs,
+		State:  state,
+	}
+
+	// Variables to capture request parameters
+	var capturedGetModelRequest *aiplatformpb.GetModelRequest
+	var capturedGetEndpointRequest *aiplatformpb.GetEndpointRequest
+
+	modelClientFactory := MockModelClientFactory(&MockModelClient{
+		GetModelFunc: func(_ context.Context, req *aiplatformpb.GetModelRequest, _ ...gax.CallOption) (*aiplatformpb.Model, error) {
+			capturedGetModelRequest = req
+
+			return mockModel, nil
+		},
+	})
+
+	endpointClientFactory := MockEndpointClientFactory(&MockEndpointClient{
+		GetEndpointFunc: func(_ context.Context, req *aiplatformpb.GetEndpointRequest, _ ...gax.CallOption) (*aiplatformpb.Endpoint, error) {
+			capturedGetEndpointRequest = req
+
+			return mockEndpoint, nil
+		},
+	})
+
+	provider := &VertexModelDeployment{}
+	testFactoryRegistry.modelClientFactory = modelClientFactory
+	testFactoryRegistry.endpointClientFactory = endpointClientFactory
+
+	// Execute Read
+	result, err := provider.Read(ctx, req)
+	if err != nil {
+		t.Fatalf("Expected nil error from Read, but got %v", err)
+	}
+
+	// Assert that the resource ID is preserved
+	if result.ID != req.ID {
+		t.Errorf("Expected resource ID %s, got %s", req.ID, result.ID)
+	}
+
+	// Validate GetModelRequest was captured and has correct parameters
+	if capturedGetModelRequest == nil {
+		t.Fatal("GetModelRequest was not captured")
+	}
+	if capturedGetModelRequest.Name != modelName {
+		t.Errorf("Expected model name %s, got %s", modelName, capturedGetModelRequest.Name)
+	}
+
+	// Validate GetEndpointRequest was captured and has correct parameters
+	if capturedGetEndpointRequest == nil {
+		t.Fatal("GetEndpointRequest was not captured")
+	}
+	expectedEndpointPath := testEndpointPath
+	if capturedGetEndpointRequest.Name != expectedEndpointPath {
+		t.Errorf("Expected endpoint path %s, got %s", expectedEndpointPath, capturedGetEndpointRequest.Name)
+	}
+
+	// Validate the returned state reflects the mock model data
+	resultState := result.State
+	if resultState.ModelName != modelName {
+		t.Errorf("Expected ModelName %s, got %s", modelName, resultState.ModelName)
+	}
+	if resultState.ModelImageURL != modelImageURL {
+		t.Errorf("Expected ModelImageURL %s, got %s", modelImageURL, resultState.ModelImageURL)
+	}
+	if resultState.ModelArtifactsBucketURI != modelArtifactsBucketURI {
+		t.Errorf("Expected ModelArtifactsBucketURI %s, got %s", modelArtifactsBucketURI, resultState.ModelArtifactsBucketURI)
+	}
+	if resultState.ModelPredictionInputSchemaURI != modelPredictionInputSchemaURI {
+		t.Errorf("Expected ModelPredictionInputSchemaURI %s, got %s", modelPredictionInputSchemaURI, resultState.ModelPredictionInputSchemaURI)
+	}
+	if resultState.ModelPredictionOutputSchemaURI != modelPredictionOutputSchemaURI {
+		t.Errorf("Expected ModelPredictionOutputSchemaURI %s, got %s", modelPredictionOutputSchemaURI, resultState.ModelPredictionOutputSchemaURI)
+	}
+
+	// Validate labels are updated from model
+	if len(resultState.Labels) != 2 {
+		t.Errorf("Expected 2 labels, got %d", len(resultState.Labels))
+	}
+	if resultState.Labels["env"] != "staging" {
+		t.Errorf("Expected label env=staging, got %s", resultState.Labels["env"])
+	}
+	if resultState.Labels["team"] != "ai" {
+		t.Errorf("Expected label team=ai, got %s", resultState.Labels["team"])
 	}
 
 	// Validate endpoint-related fields are updated from endpoint response

@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"cloud.google.com/go/aiplatform/apiv1/aiplatformpb"
 )
@@ -32,8 +33,13 @@ func NewVertexEndpointModelGetter(endpointClient VertexEndpointClient, projectID
 // Get retrieves an endpoint and finds the specified deployed model within it.
 // Returns the endpoint, the deployed model (if found), and any error.
 func (g *VertexEndpointModelGetter) Get(ctx context.Context, endpointName, deployedModelID string) (*aiplatformpb.Endpoint, *aiplatformpb.DeployedModel, error) {
+	endpointFullName := endpointName
+	if !strings.HasPrefix(endpointName, "projects/") {
+		endpointFullName = fmt.Sprintf("projects/%s/locations/%s/endpoints/%s",
+			g.projectID, g.region, endpointName)
+	}
 	getReq := &aiplatformpb.GetEndpointRequest{
-		Name: endpointName,
+		Name: endpointFullName,
 	}
 
 	endpoint, err := g.endpointClient.GetEndpoint(ctx, getReq)

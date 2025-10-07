@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"cloud.google.com/go/aiplatform/apiv1/aiplatformpb"
 )
@@ -17,20 +18,28 @@ type ModelDeleter interface {
 // VertexModelDelete implements the ModelDeleter interface for Vertex AI.
 type VertexModelDelete struct {
 	modelClient VertexModelClient
+	projectID   string
+	region      string
 }
 
 // NewVertexModelDelete creates a new VertexModelDelete with the provided model client.
-func NewVertexModelDelete(_ context.Context, modelClient VertexModelClient) *VertexModelDelete {
+func NewVertexModelDelete(_ context.Context, modelClient VertexModelClient, projectID, region string) *VertexModelDelete {
 	return &VertexModelDelete{
 		modelClient: modelClient,
+		projectID:   projectID,
+		region:      region,
 	}
 }
 
 // Delete deletes a model from Vertex AI.
 func (d *VertexModelDelete) Delete(ctx context.Context, modelName string) error {
+	modelFullName := modelName
+	if !strings.HasPrefix(modelName, "projects/") {
+		modelFullName = fmt.Sprintf("projects/%s/locations/%s/models/%s",
+			d.projectID, d.region, modelName)
+	}
 	deleteReq := &aiplatformpb.DeleteModelRequest{
-		// Model name is already in the format projects/{project}/locations/{location}/models/{model ID}
-		Name: modelName,
+		Name: modelFullName,
 	}
 
 	deleteOperation, err := d.modelClient.DeleteModel(ctx, deleteReq)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"cloud.google.com/go/aiplatform/apiv1/aiplatformpb"
 )
@@ -17,19 +18,28 @@ type ModelUndeployer interface {
 // VertexModelUndeploy implements the ModelUndeployer interface for Vertex AI.
 type VertexModelUndeploy struct {
 	endpointClient VertexEndpointClient
+	projectID      string
+	region         string
 }
 
 // NewVertexModelUndeploy creates a new VertexModelUndeploy with the provided endpoint client.
-func NewVertexModelUndeploy(_ context.Context, endpointClient VertexEndpointClient, _, _ string) *VertexModelUndeploy {
+func NewVertexModelUndeploy(_ context.Context, endpointClient VertexEndpointClient, projectID, region string) *VertexModelUndeploy {
 	return &VertexModelUndeploy{
 		endpointClient: endpointClient,
+		projectID:      projectID,
+		region:         region,
 	}
 }
 
 // Undeploy undeploys a model from an endpoint.
 func (u *VertexModelUndeploy) Undeploy(ctx context.Context, endpointName, deployedModelID string) error {
+	endpointFullName := endpointName
+	if !strings.HasPrefix(endpointName, "projects/") {
+		endpointFullName = fmt.Sprintf("projects/%s/locations/%s/endpoints/%s",
+			u.projectID, u.region, endpointName)
+	}
 	undeployReq := &aiplatformpb.UndeployModelRequest{
-		Endpoint:        endpointName, // endpointName is already fully qualified
+		Endpoint:        endpointFullName,
 		DeployedModelId: deployedModelID,
 	}
 

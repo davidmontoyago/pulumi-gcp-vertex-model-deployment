@@ -490,10 +490,13 @@ func MockEndpointClientFactory(mockClient *MockEndpointClient) services.Endpoint
 func TestVertexModelDeploymentDelete_ModelOnly(t *testing.T) {
 	ctx := context.Background()
 
-	// Test state for model-only deletion (no endpoint deployment)
+	// Test state for model-only deletion (no endpoint deployment) using SHORT model name
+	// This test verifies that when the state contains a short model name,
+	// the model delete operation properly converts it to a fully qualified name for the API call
 	projectID := testProjectID
 	region := testRegion
-	modelName := testModelName
+	modelName := "1234567890"      // Use SHORT model name (just the ID)
+	fullModelName := testModelName // Expected fully qualified name
 	createTime := testCreateTime
 
 	// Variables to capture request parameters
@@ -547,9 +550,78 @@ func TestVertexModelDeploymentDelete_ModelOnly(t *testing.T) {
 		t.Fatal("DeleteModelRequest was not captured")
 	}
 
-	// Assert model name format
-	if capturedDeleteRequest.Name != modelName {
-		t.Errorf("Expected Name %s, got %s", modelName, capturedDeleteRequest.Name)
+	// Assert model name format - should be fully qualified even though state had short name
+	if capturedDeleteRequest.Name != fullModelName {
+		t.Errorf("Expected fully qualified model name %s, got %s", fullModelName, capturedDeleteRequest.Name)
+	}
+}
+
+//nolint:paralleltest,tparallel // Cannot run in parallel due to shared testFactoryRegistry
+func TestVertexModelDeploymentDelete_ModelOnlyFullyQualified(t *testing.T) {
+	ctx := context.Background()
+
+	// Test state for model-only deletion (no endpoint deployment) using FULLY QUALIFIED model name
+	// This test verifies that when the state already contains a fully qualified model name,
+	// it is passed through correctly to the model client
+	projectID := testProjectID
+	region := testRegion
+	fullModelName := testModelName // Use FULLY QUALIFIED model name
+	createTime := testCreateTime
+
+	// Variables to capture request parameters
+	var capturedDeleteRequest *aiplatformpb.DeleteModelRequest
+
+	state := VertexModelDeploymentState{
+		VertexModelDeploymentArgs: VertexModelDeploymentArgs{
+			ProjectID: projectID,
+			Region:    region,
+		},
+		ModelName:       fullModelName, // Use fully qualified name
+		DeployedModelID: "",            // Empty - no endpoint deployment
+		EndpointName:    "",            // Empty - no endpoint deployment
+		CreateTime:      createTime,
+	}
+
+	req := infer.DeleteRequest[VertexModelDeploymentState]{
+		ID:    "test-model-only-qualified",
+		State: state,
+	}
+
+	modelClientFactory := MockModelClientFactory(&MockModelClient{
+		DeleteModelFunc: func(_ context.Context, req *aiplatformpb.DeleteModelRequest, _ ...gax.CallOption) (*aiplatform.DeleteModelOperation, error) {
+			capturedDeleteRequest = req
+
+			return nil, nil // Simulate mocked operation
+		},
+	})
+
+	// Endpoint client should not be called for model-only deletion
+	endpointClientFactory := MockEndpointClientFactory(&MockEndpointClient{
+		UndeployModelFunc: func(_ context.Context, _ *aiplatformpb.UndeployModelRequest, _ ...gax.CallOption) (*aiplatform.UndeployModelOperation, error) {
+			t.Error("UndeployModel should not be called for model-only deletion")
+
+			return nil, nil
+		},
+	})
+
+	provider := &VertexModelDeployment{}
+	testFactoryRegistry.modelClientFactory = modelClientFactory
+	testFactoryRegistry.endpointClientFactory = endpointClientFactory
+
+	// Execute deletion
+	_, err := provider.Delete(ctx, req)
+	if err != nil {
+		t.Fatalf("Expected nil error from mock, but got %v", err)
+	}
+
+	// Validate DeleteModelRequest was captured and has correct parameters
+	if capturedDeleteRequest == nil {
+		t.Fatal("DeleteModelRequest was not captured")
+	}
+
+	// Assert model name format - should remain fully qualified
+	if capturedDeleteRequest.Name != fullModelName {
+		t.Errorf("Expected fully qualified model name %s, got %s", fullModelName, capturedDeleteRequest.Name)
 	}
 }
 
@@ -557,10 +629,15 @@ func TestVertexModelDeploymentDelete_ModelOnly(t *testing.T) {
 func TestVertexModelDeploymentDelete_ModelWithEndpoint(t *testing.T) {
 	ctx := context.Background()
 
-	// Test state for model deletion with endpoint deployment
+	// Test state for model deletion with endpoint deployment using SHORT names
+	// This test verifies that when the state contains short model and endpoint names,
+	// both operations properly convert them to fully qualified names for the API calls
 	projectID := testProjectID
 	region := testRegion
-	modelName := testModelName
+	modelName := "1234567890"            // Use SHORT model name (just the ID)
+	fullModelName := testModelName       // Expected fully qualified model name
+	endpointName := testEndpointID       // Use SHORT endpoint name (just the ID)
+	fullEndpointName := testEndpointPath // Expected fully qualified endpoint name
 	deployedModelID := "deployed-model-id-123"
 	createTime := testCreateTime
 
@@ -573,9 +650,9 @@ func TestVertexModelDeploymentDelete_ModelWithEndpoint(t *testing.T) {
 			ProjectID: projectID,
 			Region:    region,
 		},
-		ModelName:       modelName,
-		DeployedModelID: deployedModelID,  // Has endpoint deployment
-		EndpointName:    testEndpointPath, // Has endpoint deployment - use full path
+		ModelName:       modelName,       // Use SHORT model name
+		DeployedModelID: deployedModelID, // Has endpoint deployment
+		EndpointName:    endpointName,    // Use SHORT endpoint name - this is the key difference
 		CreateTime:      createTime,
 	}
 
@@ -615,10 +692,9 @@ func TestVertexModelDeploymentDelete_ModelWithEndpoint(t *testing.T) {
 		t.Fatal("UndeployModelRequest was not captured")
 	}
 
-	// Assert endpoint format
-	expectedEndpoint := testEndpointPath
-	if capturedUndeployRequest.Endpoint != expectedEndpoint {
-		t.Errorf("Expected Endpoint %s, got %s", expectedEndpoint, capturedUndeployRequest.Endpoint)
+	// Assert endpoint format - should be fully qualified even though state had short name
+	if capturedUndeployRequest.Endpoint != fullEndpointName {
+		t.Errorf("Expected fully qualified endpoint name %s, got %s", fullEndpointName, capturedUndeployRequest.Endpoint)
 	}
 
 	// Assert deployed model ID
@@ -631,9 +707,95 @@ func TestVertexModelDeploymentDelete_ModelWithEndpoint(t *testing.T) {
 		t.Fatal("DeleteModelRequest was not captured")
 	}
 
-	// Assert model name format
-	if capturedDeleteRequest.Name != modelName {
-		t.Errorf("Expected Name %s, got %s", modelName, capturedDeleteRequest.Name)
+	// Assert model name format - should be fully qualified even though state had short name
+	if capturedDeleteRequest.Name != fullModelName {
+		t.Errorf("Expected fully qualified model name %s, got %s", fullModelName, capturedDeleteRequest.Name)
+	}
+}
+
+//nolint:paralleltest,tparallel // Cannot run in parallel due to shared testFactoryRegistry
+func TestVertexModelDeploymentDelete_ModelWithEndpointFullyQualified(t *testing.T) {
+	ctx := context.Background()
+
+	// Test state for model deletion with endpoint deployment using FULLY QUALIFIED names
+	// This test verifies that when the state already contains fully qualified model and endpoint names,
+	// they are passed through correctly to the respective clients
+	projectID := testProjectID
+	region := testRegion
+	fullModelName := testModelName       // Use FULLY QUALIFIED model name
+	fullEndpointName := testEndpointPath // Use FULLY QUALIFIED endpoint name
+	deployedModelID := "deployed-model-id-456"
+	createTime := testCreateTime
+
+	// Variables to capture request parameters
+	var capturedUndeployRequest *aiplatformpb.UndeployModelRequest
+	var capturedDeleteRequest *aiplatformpb.DeleteModelRequest
+
+	state := VertexModelDeploymentState{
+		VertexModelDeploymentArgs: VertexModelDeploymentArgs{
+			ProjectID: projectID,
+			Region:    region,
+		},
+		ModelName:       fullModelName,    // Use FULLY QUALIFIED model name
+		DeployedModelID: deployedModelID,  // Has endpoint deployment
+		EndpointName:    fullEndpointName, // Use FULLY QUALIFIED endpoint name - this is the key difference
+		CreateTime:      createTime,
+	}
+
+	req := infer.DeleteRequest[VertexModelDeploymentState]{
+		ID:    "test-model-with-endpoint-qualified",
+		State: state,
+	}
+
+	modelClientFactory := MockModelClientFactory(&MockModelClient{
+		DeleteModelFunc: func(_ context.Context, req *aiplatformpb.DeleteModelRequest, _ ...gax.CallOption) (*aiplatform.DeleteModelOperation, error) {
+			capturedDeleteRequest = req
+
+			return nil, nil // Simulate mocked operation
+		},
+	})
+
+	endpointClientFactory := MockEndpointClientFactory(&MockEndpointClient{
+		UndeployModelFunc: func(_ context.Context, req *aiplatformpb.UndeployModelRequest, _ ...gax.CallOption) (*aiplatform.UndeployModelOperation, error) {
+			capturedUndeployRequest = req
+
+			return nil, nil // Simulate mocked operation
+		},
+	})
+
+	provider := &VertexModelDeployment{}
+	testFactoryRegistry.modelClientFactory = modelClientFactory
+	testFactoryRegistry.endpointClientFactory = endpointClientFactory
+
+	// Execute deletion
+	_, err := provider.Delete(ctx, req)
+	if err != nil {
+		t.Fatalf("Expected nil error from mock, but got %v", err)
+	}
+
+	// Validate UndeployModelRequest was captured first and has correct parameters
+	if capturedUndeployRequest == nil {
+		t.Fatal("UndeployModelRequest was not captured")
+	}
+
+	// Assert endpoint format - should remain fully qualified
+	if capturedUndeployRequest.Endpoint != fullEndpointName {
+		t.Errorf("Expected fully qualified endpoint name %s, got %s", fullEndpointName, capturedUndeployRequest.Endpoint)
+	}
+
+	// Assert deployed model ID
+	if capturedUndeployRequest.DeployedModelId != deployedModelID {
+		t.Errorf("Expected DeployedModelId %s, got %s", deployedModelID, capturedUndeployRequest.DeployedModelId)
+	}
+
+	// Validate DeleteModelRequest was captured after undeployment and has correct parameters
+	if capturedDeleteRequest == nil {
+		t.Fatal("DeleteModelRequest was not captured")
+	}
+
+	// Assert model name format - should remain fully qualified
+	if capturedDeleteRequest.Name != fullModelName {
+		t.Errorf("Expected fully qualified model name %s, got %s", fullModelName, capturedDeleteRequest.Name)
 	}
 }
 

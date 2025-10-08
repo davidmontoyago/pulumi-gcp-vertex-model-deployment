@@ -35,6 +35,18 @@ if not MYPY:
         """
         Accelerator type for endpoint deployment. Defaults to ACCELERATOR_TYPE_UNSPECIFIED. E.g.: NVIDIA_TESLA_P4, NVIDIA_TESLA_T4
         """
+        disable_container_logging: NotRequired[pulumi.Input[_builtins.bool]]
+        """
+        Disable container logging
+        """
+        enable_access_logging: NotRequired[pulumi.Input[_builtins.bool]]
+        """
+        Enable access logging
+        """
+        enable_spot_vms: NotRequired[pulumi.Input[_builtins.bool]]
+        """
+        Enable spot VMs
+        """
         machine_type: NotRequired[pulumi.Input[_builtins.str]]
         """
         Machine type for deployment
@@ -60,6 +72,9 @@ class EndpointModelDeploymentArgsArgs:
                  endpoint_id: pulumi.Input[_builtins.str],
                  accelerator_count: Optional[pulumi.Input[_builtins.int]] = None,
                  accelerator_type: Optional[pulumi.Input[_builtins.str]] = None,
+                 disable_container_logging: Optional[pulumi.Input[_builtins.bool]] = None,
+                 enable_access_logging: Optional[pulumi.Input[_builtins.bool]] = None,
+                 enable_spot_vms: Optional[pulumi.Input[_builtins.bool]] = None,
                  machine_type: Optional[pulumi.Input[_builtins.str]] = None,
                  max_replicas: Optional[pulumi.Input[_builtins.int]] = None,
                  min_replicas: Optional[pulumi.Input[_builtins.int]] = None,
@@ -68,6 +83,9 @@ class EndpointModelDeploymentArgsArgs:
         :param pulumi.Input[_builtins.str] endpoint_id: Vertex AI Endpoint ID
         :param pulumi.Input[_builtins.int] accelerator_count: Accelerator count for deployment
         :param pulumi.Input[_builtins.str] accelerator_type: Accelerator type for endpoint deployment. Defaults to ACCELERATOR_TYPE_UNSPECIFIED. E.g.: NVIDIA_TESLA_P4, NVIDIA_TESLA_T4
+        :param pulumi.Input[_builtins.bool] disable_container_logging: Disable container logging
+        :param pulumi.Input[_builtins.bool] enable_access_logging: Enable access logging
+        :param pulumi.Input[_builtins.bool] enable_spot_vms: Enable spot VMs
         :param pulumi.Input[_builtins.str] machine_type: Machine type for deployment
         :param pulumi.Input[_builtins.int] max_replicas: Maximum number of replicas
         :param pulumi.Input[_builtins.int] min_replicas: Minimum number of replicas
@@ -78,6 +96,12 @@ class EndpointModelDeploymentArgsArgs:
             pulumi.set(__self__, "accelerator_count", accelerator_count)
         if accelerator_type is not None:
             pulumi.set(__self__, "accelerator_type", accelerator_type)
+        if disable_container_logging is not None:
+            pulumi.set(__self__, "disable_container_logging", disable_container_logging)
+        if enable_access_logging is not None:
+            pulumi.set(__self__, "enable_access_logging", enable_access_logging)
+        if enable_spot_vms is not None:
+            pulumi.set(__self__, "enable_spot_vms", enable_spot_vms)
         if machine_type is None:
             machine_type = 'n1-standard-8'
         if machine_type is not None:
@@ -130,6 +154,42 @@ class EndpointModelDeploymentArgsArgs:
     @accelerator_type.setter
     def accelerator_type(self, value: Optional[pulumi.Input[_builtins.str]]):
         pulumi.set(self, "accelerator_type", value)
+
+    @_builtins.property
+    @pulumi.getter(name="disableContainerLogging")
+    def disable_container_logging(self) -> Optional[pulumi.Input[_builtins.bool]]:
+        """
+        Disable container logging
+        """
+        return pulumi.get(self, "disable_container_logging")
+
+    @disable_container_logging.setter
+    def disable_container_logging(self, value: Optional[pulumi.Input[_builtins.bool]]):
+        pulumi.set(self, "disable_container_logging", value)
+
+    @_builtins.property
+    @pulumi.getter(name="enableAccessLogging")
+    def enable_access_logging(self) -> Optional[pulumi.Input[_builtins.bool]]:
+        """
+        Enable access logging
+        """
+        return pulumi.get(self, "enable_access_logging")
+
+    @enable_access_logging.setter
+    def enable_access_logging(self, value: Optional[pulumi.Input[_builtins.bool]]):
+        pulumi.set(self, "enable_access_logging", value)
+
+    @_builtins.property
+    @pulumi.getter(name="enableSpotVMs")
+    def enable_spot_vms(self) -> Optional[pulumi.Input[_builtins.bool]]:
+        """
+        Enable spot VMs
+        """
+        return pulumi.get(self, "enable_spot_vms")
+
+    @enable_spot_vms.setter
+    def enable_spot_vms(self, value: Optional[pulumi.Input[_builtins.bool]]):
+        pulumi.set(self, "enable_spot_vms", value)
 
     @_builtins.property
     @pulumi.getter(name="machineType")

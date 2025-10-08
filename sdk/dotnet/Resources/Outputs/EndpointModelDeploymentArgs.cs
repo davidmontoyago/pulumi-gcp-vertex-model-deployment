@@ -23,6 +23,18 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources.Outputs
         /// </summary>
         public readonly string? AcceleratorType;
         /// <summary>
+        /// Disable container logging
+        /// </summary>
+        public readonly bool? DisableContainerLogging;
+        /// <summary>
+        /// Enable access logging
+        /// </summary>
+        public readonly bool? EnableAccessLogging;
+        /// <summary>
+        /// Enable spot VMs
+        /// </summary>
+        public readonly bool? EnableSpotVMs;
+        /// <summary>
         /// Vertex AI Endpoint ID
         /// </summary>
         public readonly string EndpointId;
@@ -49,6 +61,12 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources.Outputs
 
             string? acceleratorType,
 
+            bool? disableContainerLogging,
+
+            bool? enableAccessLogging,
+
+            bool? enableSpotVMs,
+
             string endpointId,
 
             string? machineType,
@@ -61,6 +79,9 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources.Outputs
         {
             AcceleratorCount = acceleratorCount;
             AcceleratorType = acceleratorType;
+            DisableContainerLogging = disableContainerLogging;
+            EnableAccessLogging = enableAccessLogging;
+            EnableSpotVMs = enableSpotVMs;
             EndpointId = endpointId;
             MachineType = machineType;
             MaxReplicas = maxReplicas;

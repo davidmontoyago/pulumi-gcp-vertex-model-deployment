@@ -18,6 +18,18 @@ export namespace resources {
          */
         acceleratorType?: string;
         /**
+         * Disable container logging
+         */
+        disableContainerLogging?: boolean;
+        /**
+         * Enable access logging
+         */
+        enableAccessLogging?: boolean;
+        /**
+         * Enable spot VMs
+         */
+        enableSpotVMs?: boolean;
+        /**
          * Vertex AI Endpoint ID
          */
         endpointId: string;

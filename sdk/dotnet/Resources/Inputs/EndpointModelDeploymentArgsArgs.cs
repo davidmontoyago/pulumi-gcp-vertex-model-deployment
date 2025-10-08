@@ -26,6 +26,24 @@ namespace Davidmontoyago.GcpVertexModelDeployment.Resources.Inputs
         public Input<string>? AcceleratorType { get; set; }
 
         /// <summary>
+        /// Disable container logging
+        /// </summary>
+        [Input("disableContainerLogging")]
+        public Input<bool>? DisableContainerLogging { get; set; }
+
+        /// <summary>
+        /// Enable access logging
+        /// </summary>
+        [Input("enableAccessLogging")]
+        public Input<bool>? EnableAccessLogging { get; set; }
+
+        /// <summary>
+        /// Enable spot VMs
+        /// </summary>
+        [Input("enableSpotVMs")]
+        public Input<bool>? EnableSpotVMs { get; set; }
+
+        /// <summary>
         /// Vertex AI Endpoint ID
         /// </summary>
         [Input("endpointId", required: true)]

@@ -18,6 +18,18 @@ export namespace resources {
          */
         acceleratorType?: pulumi.Input<string>;
         /**
+         * Disable container logging
+         */
+        disableContainerLogging?: pulumi.Input<boolean>;
+        /**
+         * Enable access logging
+         */
+        enableAccessLogging?: pulumi.Input<boolean>;
+        /**
+         * Enable spot VMs
+         */
+        enableSpotVMs?: pulumi.Input<boolean>;
+        /**
          * Vertex AI Endpoint ID
          */
         endpointId: pulumi.Input<string>;

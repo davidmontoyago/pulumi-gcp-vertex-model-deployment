@@ -480,13 +480,16 @@ func (v VertexModelDeployment) getEndpointClientFactory() services.EndpointClien
 // toEndpointDeploymentConfig converts EndpointModelDeploymentArgs to services.EndpointModelDeploymentConfig
 func toEndpointDeploymentConfig(args *EndpointModelDeploymentArgs) services.EndpointModelDeploymentConfig {
 	return services.EndpointModelDeploymentConfig{
-		EndpointID:       args.EndpointID,
-		MachineType:      args.MachineType,
-		AcceleratorType:  args.AcceleratorType,
-		AcceleratorCount: args.AcceleratorCount,
-		MinReplicas:      safeIntToInt32(args.MinReplicas),
-		MaxReplicas:      safeIntToInt32(args.MaxReplicas),
-		TrafficPercent:   safeIntToInt32(args.TrafficPercent),
+		EndpointID:              args.EndpointID,
+		MachineType:             args.MachineType,
+		AcceleratorType:         args.AcceleratorType,
+		AcceleratorCount:        args.AcceleratorCount,
+		MinReplicas:             safeIntToInt32(args.MinReplicas),
+		MaxReplicas:             safeIntToInt32(args.MaxReplicas),
+		TrafficPercent:          safeIntToInt32(args.TrafficPercent),
+		DisableContainerLogging: args.DisableContainerLogging,
+		EnableAccessLogging:     args.EnableAccessLogging,
+		EnableSpotVMs:           args.EnableSpotVMs,
 	}
 }
 

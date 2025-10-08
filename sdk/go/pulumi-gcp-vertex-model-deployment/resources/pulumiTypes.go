@@ -18,6 +18,12 @@ type EndpointModelDeploymentArgs struct {
 	AcceleratorCount *int `pulumi:"acceleratorCount"`
 	// Accelerator type for endpoint deployment. Defaults to ACCELERATOR_TYPE_UNSPECIFIED. E.g.: NVIDIA_TESLA_P4, NVIDIA_TESLA_T4
 	AcceleratorType *string `pulumi:"acceleratorType"`
+	// Disable container logging
+	DisableContainerLogging *bool `pulumi:"disableContainerLogging"`
+	// Enable access logging
+	EnableAccessLogging *bool `pulumi:"enableAccessLogging"`
+	// Enable spot VMs
+	EnableSpotVMs *bool `pulumi:"enableSpotVMs"`
 	// Vertex AI Endpoint ID
 	EndpointId string `pulumi:"endpointId"`
 	// Machine type for deployment
@@ -71,6 +77,12 @@ type EndpointModelDeploymentArgsArgs struct {
 	AcceleratorCount pulumi.IntPtrInput `pulumi:"acceleratorCount"`
 	// Accelerator type for endpoint deployment. Defaults to ACCELERATOR_TYPE_UNSPECIFIED. E.g.: NVIDIA_TESLA_P4, NVIDIA_TESLA_T4
 	AcceleratorType pulumi.StringPtrInput `pulumi:"acceleratorType"`
+	// Disable container logging
+	DisableContainerLogging pulumi.BoolPtrInput `pulumi:"disableContainerLogging"`
+	// Enable access logging
+	EnableAccessLogging pulumi.BoolPtrInput `pulumi:"enableAccessLogging"`
+	// Enable spot VMs
+	EnableSpotVMs pulumi.BoolPtrInput `pulumi:"enableSpotVMs"`
 	// Vertex AI Endpoint ID
 	EndpointId pulumi.StringInput `pulumi:"endpointId"`
 	// Machine type for deployment
@@ -190,6 +202,21 @@ func (o EndpointModelDeploymentArgsOutput) AcceleratorType() pulumi.StringPtrOut
 	return o.ApplyT(func(v EndpointModelDeploymentArgs) *string { return v.AcceleratorType }).(pulumi.StringPtrOutput)
 }
 
+// Disable container logging
+func (o EndpointModelDeploymentArgsOutput) DisableContainerLogging() pulumi.BoolPtrOutput {
+	return o.ApplyT(func(v EndpointModelDeploymentArgs) *bool { return v.DisableContainerLogging }).(pulumi.BoolPtrOutput)
+}
+
+// Enable access logging
+func (o EndpointModelDeploymentArgsOutput) EnableAccessLogging() pulumi.BoolPtrOutput {
+	return o.ApplyT(func(v EndpointModelDeploymentArgs) *bool { return v.EnableAccessLogging }).(pulumi.BoolPtrOutput)
+}
+
+// Enable spot VMs
+func (o EndpointModelDeploymentArgsOutput) EnableSpotVMs() pulumi.BoolPtrOutput {
+	return o.ApplyT(func(v EndpointModelDeploymentArgs) *bool { return v.EnableSpotVMs }).(pulumi.BoolPtrOutput)
+}
+
 // Vertex AI Endpoint ID
 func (o EndpointModelDeploymentArgsOutput) EndpointId() pulumi.StringOutput {
 	return o.ApplyT(func(v EndpointModelDeploymentArgs) string { return v.EndpointId }).(pulumi.StringOutput)
@@ -257,6 +284,36 @@ func (o EndpointModelDeploymentArgsPtrOutput) AcceleratorType() pulumi.StringPtr
 		}
 		return v.AcceleratorType
 	}).(pulumi.StringPtrOutput)
+}
+
+// Disable container logging
+func (o EndpointModelDeploymentArgsPtrOutput) DisableContainerLogging() pulumi.BoolPtrOutput {
+	return o.ApplyT(func(v *EndpointModelDeploymentArgs) *bool {
+		if v == nil {
+			return nil
+		}
+		return v.DisableContainerLogging
+	}).(pulumi.BoolPtrOutput)
+}
+
+// Enable access logging
+func (o EndpointModelDeploymentArgsPtrOutput) EnableAccessLogging() pulumi.BoolPtrOutput {
+	return o.ApplyT(func(v *EndpointModelDeploymentArgs) *bool {
+		if v == nil {
+			return nil
+		}
+		return v.EnableAccessLogging
+	}).(pulumi.BoolPtrOutput)
+}
+
+// Enable spot VMs
+func (o EndpointModelDeploymentArgsPtrOutput) EnableSpotVMs() pulumi.BoolPtrOutput {
+	return o.ApplyT(func(v *EndpointModelDeploymentArgs) *bool {
+		if v == nil {
+			return nil
+		}
+		return v.EnableSpotVMs
+	}).(pulumi.BoolPtrOutput)
 }
 
 // Vertex AI Endpoint ID

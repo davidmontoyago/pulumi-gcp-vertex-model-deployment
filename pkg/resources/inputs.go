@@ -47,13 +47,16 @@ type VertexModelDeploymentArgs struct {
 // EndpointModelDeploymentArgs defines the input arguments for deploying an
 // uploaded model to a Vertex AI endpoint.
 type EndpointModelDeploymentArgs struct {
-	EndpointID       string `pulumi:"endpointId"`
-	MachineType      string `pulumi:"machineType,optional"`
-	AcceleratorType  string `pulumi:"acceleratorType,optional"`
-	AcceleratorCount int32  `pulumi:"acceleratorCount,optional"`
-	MinReplicas      int    `pulumi:"minReplicas,optional"`
-	MaxReplicas      int    `pulumi:"maxReplicas,optional"`
-	TrafficPercent   int    `pulumi:"trafficPercent,optional"`
+	EndpointID              string `pulumi:"endpointId"`
+	MachineType             string `pulumi:"machineType,optional"`
+	AcceleratorType         string `pulumi:"acceleratorType,optional"`
+	AcceleratorCount        int32  `pulumi:"acceleratorCount,optional"`
+	MinReplicas             int    `pulumi:"minReplicas,optional"`
+	MaxReplicas             int    `pulumi:"maxReplicas,optional"`
+	TrafficPercent          int    `pulumi:"trafficPercent,optional"`
+	DisableContainerLogging bool   `pulumi:"disableContainerLogging,optional"`
+	EnableAccessLogging     bool   `pulumi:"enableAccessLogging,optional"`
+	EnableSpotVMs           bool   `pulumi:"enableSpotVMs,optional"`
 }
 
 // Annotate provides metadata and default values for the VertexModelDeploymentArgs.
@@ -82,6 +85,9 @@ func (args *EndpointModelDeploymentArgs) Annotate(annotator infer.Annotator) {
 	annotator.Describe(&args.MinReplicas, "Minimum number of replicas")
 	annotator.Describe(&args.MaxReplicas, "Maximum number of replicas")
 	annotator.Describe(&args.TrafficPercent, "Traffic percentage for this deployment")
+	annotator.Describe(&args.DisableContainerLogging, "Disable container logging")
+	annotator.Describe(&args.EnableAccessLogging, "Enable access logging")
+	annotator.Describe(&args.EnableSpotVMs, "Enable spot VMs")
 
 	// Set defaults
 	annotator.SetDefault(&args.MachineType, "n1-standard-8")

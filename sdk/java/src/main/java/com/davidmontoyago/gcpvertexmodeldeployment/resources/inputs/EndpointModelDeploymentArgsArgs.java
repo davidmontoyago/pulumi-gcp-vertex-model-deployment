@@ -7,6 +7,7 @@ import com.pulumi.core.Output;
 import com.pulumi.core.annotations.Import;
 import com.pulumi.core.internal.Codegen;
 import com.pulumi.exceptions.MissingRequiredPropertyException;
+import java.lang.Boolean;
 import java.lang.Integer;
 import java.lang.String;
 import java.util.Objects;
@@ -46,6 +47,51 @@ public final class EndpointModelDeploymentArgsArgs extends com.pulumi.resources.
      */
     public Optional<Output<String>> acceleratorType() {
         return Optional.ofNullable(this.acceleratorType);
+    }
+
+    /**
+     * Disable container logging
+     * 
+     */
+    @Import(name="disableContainerLogging")
+    private @Nullable Output<Boolean> disableContainerLogging;
+
+    /**
+     * @return Disable container logging
+     * 
+     */
+    public Optional<Output<Boolean>> disableContainerLogging() {
+        return Optional.ofNullable(this.disableContainerLogging);
+    }
+
+    /**
+     * Enable access logging
+     * 
+     */
+    @Import(name="enableAccessLogging")
+    private @Nullable Output<Boolean> enableAccessLogging;
+
+    /**
+     * @return Enable access logging
+     * 
+     */
+    public Optional<Output<Boolean>> enableAccessLogging() {
+        return Optional.ofNullable(this.enableAccessLogging);
+    }
+
+    /**
+     * Enable spot VMs
+     * 
+     */
+    @Import(name="enableSpotVMs")
+    private @Nullable Output<Boolean> enableSpotVMs;
+
+    /**
+     * @return Enable spot VMs
+     * 
+     */
+    public Optional<Output<Boolean>> enableSpotVMs() {
+        return Optional.ofNullable(this.enableSpotVMs);
     }
 
     /**
@@ -128,6 +174,9 @@ public final class EndpointModelDeploymentArgsArgs extends com.pulumi.resources.
     private EndpointModelDeploymentArgsArgs(EndpointModelDeploymentArgsArgs $) {
         this.acceleratorCount = $.acceleratorCount;
         this.acceleratorType = $.acceleratorType;
+        this.disableContainerLogging = $.disableContainerLogging;
+        this.enableAccessLogging = $.enableAccessLogging;
+        this.enableSpotVMs = $.enableSpotVMs;
         this.endpointId = $.endpointId;
         this.machineType = $.machineType;
         this.maxReplicas = $.maxReplicas;
@@ -193,6 +242,69 @@ public final class EndpointModelDeploymentArgsArgs extends com.pulumi.resources.
          */
         public Builder acceleratorType(String acceleratorType) {
             return acceleratorType(Output.of(acceleratorType));
+        }
+
+        /**
+         * @param disableContainerLogging Disable container logging
+         * 
+         * @return builder
+         * 
+         */
+        public Builder disableContainerLogging(@Nullable Output<Boolean> disableContainerLogging) {
+            $.disableContainerLogging = disableContainerLogging;
+            return this;
+        }
+
+        /**
+         * @param disableContainerLogging Disable container logging
+         * 
+         * @return builder
+         * 
+         */
+        public Builder disableContainerLogging(Boolean disableContainerLogging) {
+            return disableContainerLogging(Output.of(disableContainerLogging));
+        }
+
+        /**
+         * @param enableAccessLogging Enable access logging
+         * 
+         * @return builder
+         * 
+         */
+        public Builder enableAccessLogging(@Nullable Output<Boolean> enableAccessLogging) {
+            $.enableAccessLogging = enableAccessLogging;
+            return this;
+        }
+
+        /**
+         * @param enableAccessLogging Enable access logging
+         * 
+         * @return builder
+         * 
+         */
+        public Builder enableAccessLogging(Boolean enableAccessLogging) {
+            return enableAccessLogging(Output.of(enableAccessLogging));
+        }
+
+        /**
+         * @param enableSpotVMs Enable spot VMs
+         * 
+         * @return builder
+         * 
+         */
+        public Builder enableSpotVMs(@Nullable Output<Boolean> enableSpotVMs) {
+            $.enableSpotVMs = enableSpotVMs;
+            return this;
+        }
+
+        /**
+         * @param enableSpotVMs Enable spot VMs
+         * 
+         * @return builder
+         * 
+         */
+        public Builder enableSpotVMs(Boolean enableSpotVMs) {
+            return enableSpotVMs(Output.of(enableSpotVMs));
         }
 
         /**

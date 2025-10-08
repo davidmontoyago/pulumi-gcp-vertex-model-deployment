@@ -20,6 +20,10 @@ type EndpointModelDeploymentConfig struct {
 	MinReplicas      int32
 	MaxReplicas      int32
 	TrafficPercent   int32
+
+	DisableContainerLogging bool
+	EnableAccessLogging     bool
+	EnableSpotVMs           bool
 }
 
 // ModelDeployer interface defines operations for deploying models.
@@ -60,8 +64,11 @@ func (d *VertexModelDeploy) Deploy(ctx context.Context, modelName, displayName, 
 				},
 				MinReplicaCount: endpointConfig.MinReplicas,
 				MaxReplicaCount: endpointConfig.MaxReplicas,
+				Spot:            endpointConfig.EnableSpotVMs,
 			},
 		},
+		DisableContainerLogging: endpointConfig.DisableContainerLogging,
+		EnableAccessLogging:     endpointConfig.EnableAccessLogging,
 	}
 
 	if serviceAccount != "" {

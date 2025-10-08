@@ -5,6 +5,7 @@ package com.davidmontoyago.gcpvertexmodeldeployment.resources.outputs;
 
 import com.pulumi.core.annotations.CustomType;
 import com.pulumi.exceptions.MissingRequiredPropertyException;
+import java.lang.Boolean;
 import java.lang.Integer;
 import java.lang.String;
 import java.util.Objects;
@@ -23,6 +24,21 @@ public final class EndpointModelDeploymentArgs {
      * 
      */
     private @Nullable String acceleratorType;
+    /**
+     * @return Disable container logging
+     * 
+     */
+    private @Nullable Boolean disableContainerLogging;
+    /**
+     * @return Enable access logging
+     * 
+     */
+    private @Nullable Boolean enableAccessLogging;
+    /**
+     * @return Enable spot VMs
+     * 
+     */
+    private @Nullable Boolean enableSpotVMs;
     /**
      * @return Vertex AI Endpoint ID
      * 
@@ -63,6 +79,27 @@ public final class EndpointModelDeploymentArgs {
      */
     public Optional<String> acceleratorType() {
         return Optional.ofNullable(this.acceleratorType);
+    }
+    /**
+     * @return Disable container logging
+     * 
+     */
+    public Optional<Boolean> disableContainerLogging() {
+        return Optional.ofNullable(this.disableContainerLogging);
+    }
+    /**
+     * @return Enable access logging
+     * 
+     */
+    public Optional<Boolean> enableAccessLogging() {
+        return Optional.ofNullable(this.enableAccessLogging);
+    }
+    /**
+     * @return Enable spot VMs
+     * 
+     */
+    public Optional<Boolean> enableSpotVMs() {
+        return Optional.ofNullable(this.enableSpotVMs);
     }
     /**
      * @return Vertex AI Endpoint ID
@@ -111,6 +148,9 @@ public final class EndpointModelDeploymentArgs {
     public static final class Builder {
         private @Nullable Integer acceleratorCount;
         private @Nullable String acceleratorType;
+        private @Nullable Boolean disableContainerLogging;
+        private @Nullable Boolean enableAccessLogging;
+        private @Nullable Boolean enableSpotVMs;
         private String endpointId;
         private @Nullable String machineType;
         private @Nullable Integer maxReplicas;
@@ -121,6 +161,9 @@ public final class EndpointModelDeploymentArgs {
     	      Objects.requireNonNull(defaults);
     	      this.acceleratorCount = defaults.acceleratorCount;
     	      this.acceleratorType = defaults.acceleratorType;
+    	      this.disableContainerLogging = defaults.disableContainerLogging;
+    	      this.enableAccessLogging = defaults.enableAccessLogging;
+    	      this.enableSpotVMs = defaults.enableSpotVMs;
     	      this.endpointId = defaults.endpointId;
     	      this.machineType = defaults.machineType;
     	      this.maxReplicas = defaults.maxReplicas;
@@ -138,6 +181,24 @@ public final class EndpointModelDeploymentArgs {
         public Builder acceleratorType(@Nullable String acceleratorType) {
 
             this.acceleratorType = acceleratorType;
+            return this;
+        }
+        @CustomType.Setter
+        public Builder disableContainerLogging(@Nullable Boolean disableContainerLogging) {
+
+            this.disableContainerLogging = disableContainerLogging;
+            return this;
+        }
+        @CustomType.Setter
+        public Builder enableAccessLogging(@Nullable Boolean enableAccessLogging) {
+
+            this.enableAccessLogging = enableAccessLogging;
+            return this;
+        }
+        @CustomType.Setter
+        public Builder enableSpotVMs(@Nullable Boolean enableSpotVMs) {
+
+            this.enableSpotVMs = enableSpotVMs;
             return this;
         }
         @CustomType.Setter
@@ -176,6 +237,9 @@ public final class EndpointModelDeploymentArgs {
             final var _resultValue = new EndpointModelDeploymentArgs();
             _resultValue.acceleratorCount = acceleratorCount;
             _resultValue.acceleratorType = acceleratorType;
+            _resultValue.disableContainerLogging = disableContainerLogging;
+            _resultValue.enableAccessLogging = enableAccessLogging;
+            _resultValue.enableSpotVMs = enableSpotVMs;
             _resultValue.endpointId = endpointId;
             _resultValue.machineType = machineType;
             _resultValue.maxReplicas = maxReplicas;

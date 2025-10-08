@@ -29,6 +29,12 @@ class EndpointModelDeploymentArgs(dict):
             suggest = "accelerator_count"
         elif key == "acceleratorType":
             suggest = "accelerator_type"
+        elif key == "disableContainerLogging":
+            suggest = "disable_container_logging"
+        elif key == "enableAccessLogging":
+            suggest = "enable_access_logging"
+        elif key == "enableSpotVMs":
+            suggest = "enable_spot_vms"
         elif key == "machineType":
             suggest = "machine_type"
         elif key == "maxReplicas":
@@ -53,6 +59,9 @@ class EndpointModelDeploymentArgs(dict):
                  endpoint_id: _builtins.str,
                  accelerator_count: Optional[_builtins.int] = None,
                  accelerator_type: Optional[_builtins.str] = None,
+                 disable_container_logging: Optional[_builtins.bool] = None,
+                 enable_access_logging: Optional[_builtins.bool] = None,
+                 enable_spot_vms: Optional[_builtins.bool] = None,
                  machine_type: Optional[_builtins.str] = None,
                  max_replicas: Optional[_builtins.int] = None,
                  min_replicas: Optional[_builtins.int] = None,
@@ -61,6 +70,9 @@ class EndpointModelDeploymentArgs(dict):
         :param _builtins.str endpoint_id: Vertex AI Endpoint ID
         :param _builtins.int accelerator_count: Accelerator count for deployment
         :param _builtins.str accelerator_type: Accelerator type for endpoint deployment. Defaults to ACCELERATOR_TYPE_UNSPECIFIED. E.g.: NVIDIA_TESLA_P4, NVIDIA_TESLA_T4
+        :param _builtins.bool disable_container_logging: Disable container logging
+        :param _builtins.bool enable_access_logging: Enable access logging
+        :param _builtins.bool enable_spot_vms: Enable spot VMs
         :param _builtins.str machine_type: Machine type for deployment
         :param _builtins.int max_replicas: Maximum number of replicas
         :param _builtins.int min_replicas: Minimum number of replicas
@@ -71,6 +83,12 @@ class EndpointModelDeploymentArgs(dict):
             pulumi.set(__self__, "accelerator_count", accelerator_count)
         if accelerator_type is not None:
             pulumi.set(__self__, "accelerator_type", accelerator_type)
+        if disable_container_logging is not None:
+            pulumi.set(__self__, "disable_container_logging", disable_container_logging)
+        if enable_access_logging is not None:
+            pulumi.set(__self__, "enable_access_logging", enable_access_logging)
+        if enable_spot_vms is not None:
+            pulumi.set(__self__, "enable_spot_vms", enable_spot_vms)
         if machine_type is None:
             machine_type = 'n1-standard-8'
         if machine_type is not None:
@@ -111,6 +129,30 @@ class EndpointModelDeploymentArgs(dict):
         Accelerator type for endpoint deployment. Defaults to ACCELERATOR_TYPE_UNSPECIFIED. E.g.: NVIDIA_TESLA_P4, NVIDIA_TESLA_T4
         """
         return pulumi.get(self, "accelerator_type")
+
+    @_builtins.property
+    @pulumi.getter(name="disableContainerLogging")
+    def disable_container_logging(self) -> Optional[_builtins.bool]:
+        """
+        Disable container logging
+        """
+        return pulumi.get(self, "disable_container_logging")
+
+    @_builtins.property
+    @pulumi.getter(name="enableAccessLogging")
+    def enable_access_logging(self) -> Optional[_builtins.bool]:
+        """
+        Enable access logging
+        """
+        return pulumi.get(self, "enable_access_logging")
+
+    @_builtins.property
+    @pulumi.getter(name="enableSpotVMs")
+    def enable_spot_vms(self) -> Optional[_builtins.bool]:
+        """
+        Enable spot VMs
+        """
+        return pulumi.get(self, "enable_spot_vms")
 
     @_builtins.property
     @pulumi.getter(name="machineType")

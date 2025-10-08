@@ -51,6 +51,9 @@ func TestVertexModelDeploymentCreate_ModelUploadAndDeployRequests(t *testing.T) 
 	containerArgs := []string{"--model-name", "custom-model", "--batch-size", "32"}
 	containerEnvVars := map[string]string{"MODEL_ENV": "production", "LOG_LEVEL": "info"}
 	containerPort := int32(9090)
+	disableContainerLogging := true
+	enableAccessLogging := true
+	enableSpotVMs := true
 
 	// Variables to capture request parameters
 	var capturedUploadRequest *aiplatformpb.UploadModelRequest
@@ -71,11 +74,14 @@ func TestVertexModelDeploymentCreate_ModelUploadAndDeployRequests(t *testing.T) 
 			EnvVars:                          containerEnvVars,
 			Port:                             containerPort,
 			EndpointModelDeployment: &EndpointModelDeploymentArgs{
-				EndpointID:     endpointID,
-				MachineType:    machineType,
-				MinReplicas:    minReplicas,
-				MaxReplicas:    maxReplicas,
-				TrafficPercent: trafficPercent,
+				EndpointID:              endpointID,
+				MachineType:             machineType,
+				MinReplicas:             minReplicas,
+				MaxReplicas:             maxReplicas,
+				TrafficPercent:          trafficPercent,
+				DisableContainerLogging: disableContainerLogging,
+				EnableAccessLogging:     enableAccessLogging,
+				EnableSpotVMs:           enableSpotVMs,
 			},
 			ServiceAccount: serviceAccount,
 			Labels:         map[string]string{"env": testEnv, "component": "ml"},
@@ -224,12 +230,20 @@ func TestVertexModelDeploymentCreate_ModelUploadAndDeployRequests(t *testing.T) 
 		t.Errorf("Expected Endpoint %s, got %s", expectedEndpoint, capturedDeployRequest.Endpoint)
 	}
 
+	// Assert endpoint deployment configuration properties
+	if capturedDeployRequest.DeployedModel.DisableContainerLogging != disableContainerLogging {
+		t.Errorf("Expected DisableContainerLogging %t, got %t", disableContainerLogging, capturedDeployRequest.DeployedModel.DisableContainerLogging)
+	}
+	if capturedDeployRequest.DeployedModel.EnableAccessLogging != enableAccessLogging {
+		t.Errorf("Expected EnableAccessLogging %t, got %t", enableAccessLogging, capturedDeployRequest.DeployedModel.EnableAccessLogging)
+	}
+
 	// Assert deployed model properties
-	validateDeployedModel(t, capturedDeployRequest.DeployedModel, resourceName, serviceAccount, machineType, int32(minReplicas), int32(maxReplicas))
+	validateDeployedModel(t, capturedDeployRequest.DeployedModel, resourceName, serviceAccount, machineType, int32(minReplicas), int32(maxReplicas), enableSpotVMs)
 }
 
 // validateDeployedModel validates the deployed model properties to reduce nesting complexity
-func validateDeployedModel(t *testing.T, deployedModel *aiplatformpb.DeployedModel, resourceName, serviceAccount, machineType string, minReplicas, maxReplicas int32) {
+func validateDeployedModel(t *testing.T, deployedModel *aiplatformpb.DeployedModel, resourceName, serviceAccount, machineType string, minReplicas, maxReplicas int32, enableSpotVMs bool) {
 	t.Helper()
 
 	if deployedModel == nil {
@@ -257,6 +271,11 @@ func validateDeployedModel(t *testing.T, deployedModel *aiplatformpb.DeployedMod
 		if machineSpec.MachineType != machineType {
 			t.Errorf("Expected MachineType %s, got %s", machineType, machineSpec.MachineType)
 		}
+	}
+
+	// Assert spot VM configuration (on DedicatedResources, not MachineSpec)
+	if predResources.Spot != enableSpotVMs {
+		t.Errorf("Expected Spot VMs %t, got %t", enableSpotVMs, predResources.Spot)
 	}
 
 	// Assert replica counts

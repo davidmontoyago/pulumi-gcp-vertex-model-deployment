@@ -525,9 +525,14 @@ func endpointDeploymentEqual(inputDeployment, stateDeployment *EndpointModelDepl
 	// Compare all fields
 	return inputDeployment.EndpointID == stateDeployment.EndpointID &&
 		inputDeployment.MachineType == stateDeployment.MachineType &&
+		inputDeployment.AcceleratorType == stateDeployment.AcceleratorType &&
+		inputDeployment.AcceleratorCount == stateDeployment.AcceleratorCount &&
 		inputDeployment.MinReplicas == stateDeployment.MinReplicas &&
 		inputDeployment.MaxReplicas == stateDeployment.MaxReplicas &&
-		inputDeployment.TrafficPercent == stateDeployment.TrafficPercent
+		inputDeployment.TrafficPercent == stateDeployment.TrafficPercent &&
+		inputDeployment.DisableContainerLogging == stateDeployment.DisableContainerLogging &&
+		inputDeployment.EnableAccessLogging == stateDeployment.EnableAccessLogging &&
+		inputDeployment.EnableSpotVMs == stateDeployment.EnableSpotVMs
 }
 
 // isResourceNotFoundError detects if the error indicates the resource doesn't exist

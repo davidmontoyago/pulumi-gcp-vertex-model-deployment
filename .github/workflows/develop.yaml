@@ -81,7 +81,7 @@ jobs:
           echo "full_sha=${GITHUB_SHA}" >> $GITHUB_OUTPUT
 
       - name: Build Pulumi plugin
-        run: PROVIDER_VERSION=${{ steps.version.outputs.PROVIDER_VERSION }} make plugin
+        run: PROVIDER_VERSION=${{ steps.version.outputs.PROVIDER_VERSION }} GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} make plugin
 
       - name: Publish Pulumi plugin
         uses: actions/upload-artifact@v4
@@ -175,7 +175,7 @@ jobs:
                 if [ -f "$file" ]; then
                   filename=$(basename "$file")
                   echo "Uploading $filename"
-                  gh release upload "$tag" "$file" --clobber --repo="$GITHUB_REPOSITORY"
+                  gh release upload "$tag" "$file" --repo="$GITHUB_REPOSITORY"
                 fi
               done
             fi

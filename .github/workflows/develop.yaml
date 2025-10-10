@@ -25,6 +25,26 @@ jobs:
       - name: Build and test
         run: make test
 
+      - name: Check SDK generation
+        run: |
+          git status --porcelain > /tmp/before_gen_sdk.txt
+
+          make gen-sdk
+
+          # Check git status
+          git status --porcelain > /tmp/after_gen_sdk.txt
+
+          # Compare the two status files
+          if ! diff -q /tmp/before_gen_sdk.txt /tmp/after_gen_sdk.txt > /dev/null; then
+            echo "❌ SDK is not up to date in the repo. Make sure to run 'make gen-sdk' and commit."
+            echo "Files changed:"
+            git status --porcelain
+            echo ""
+            exit 1
+          else
+            echo "✅ SDK is up to date."
+          fi
+
       - name: Report test coverage
         uses: ncruces/go-coverage-report@v0
         with:

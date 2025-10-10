@@ -43,7 +43,7 @@ plugin-local: plugin
 	pulumi plugin install resource gcp-vertex-model-deployment $(PROVIDER_VERSION) --file ./build/$(PLUGIN_NAME)
 	@echo "Plugin installed successfully"
 
-plugin: gen-sdk
+plugin:
 	@set -eu && \
 		mkdir -p ./build && \
 		echo "Building $(PROVIDER_NAME) with version $(PROVIDER_VERSION): $(PLUGIN_NAME)" && \

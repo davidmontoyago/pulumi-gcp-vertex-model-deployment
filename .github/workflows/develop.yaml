@@ -36,7 +36,7 @@ jobs:
 
           # Compare the two status files
           if ! diff -q /tmp/before_gen_sdk.txt /tmp/after_gen_sdk.txt > /dev/null; then
-            echo "❌ SDK is not up to date in the repo. Make sure to run 'make gen-sdk' and commit."
+            echo "❌ SDK is not up to date in the repo. Make sure to run 'make gen-sdk && make gen-sdk-dockerized' and commit."
             echo "Files changed:"
             git status --porcelain
             echo ""

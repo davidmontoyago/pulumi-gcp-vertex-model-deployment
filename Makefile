@@ -11,6 +11,20 @@ build: clean
 	go mod download
 	go build -o ./build/pulumi-resource-$(PROVIDER_NAME) ./cmd
 
+build-dockerized: clean
+	@echo "Building using Docker (Linux AMD64)..."
+	@docker run --rm \
+		-v $$(pwd):/app \
+		-v $$(go env GOCACHE):/.cache/go-build -e GOCACHE=/.cache/go-build \
+		-v $$(go env GOMODCACHE):/.cache/mod -e GOMODCACHE=/.cache/mod \
+		-w /app \
+		-e GOOS=linux \
+		-e GOARCH=amd64 \
+		-e CGO_ENABLED=0 \
+		golang:1.24.5-alpine \
+		sh -c "apk add --no-cache git && go mod download && go build -o ./build/pulumi-resource-$(PROVIDER_NAME) ./cmd"
+	@echo "Build completed successfully"
+
 test: build
 	go test -v -race -count=1 -timeout=30s -coverprofile=coverage.out ./...
 
@@ -37,6 +51,19 @@ gen-sdk: build
 	@pulumi package gen-sdk ./build/pulumi-resource-$(PROVIDER_NAME)
 	@echo "SDKs generated successfully"
 	cd sdk/go && go mod init github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment/sdk/go && go mod tidy
+
+gen-sdk-dockerized: build-dockerized
+	@echo "Generating SDKs using Docker (Linux AMD64)..."
+	@docker run --rm \
+		-v $$(pwd):/app \
+		-v $$(go env GOCACHE):/.cache/go-build -e GOCACHE=/.cache/go-build \
+		-v $$(go env GOMODCACHE):/.cache/mod -e GOMODCACHE=/.cache/mod \
+		-w /app \
+		-e GOOS=linux \
+		-e GOARCH=amd64 \
+		pulumi/pulumi:latest package gen-sdk ./build/pulumi-resource-$(PROVIDER_NAME)
+	@echo "SDKs generated successfully"
+	@cd sdk/go && go mod init github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment/sdk/go && go mod tidy
 
 plugin-local: plugin
 	@echo "Installing provider..."

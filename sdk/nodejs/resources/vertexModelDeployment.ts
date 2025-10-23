@@ -39,70 +39,70 @@ export class VertexModelDeployment extends pulumi.CustomResource {
     /**
      * Dockerized model server command line arguments
      */
-    public readonly args!: pulumi.Output<string[] | undefined>;
+    declare public readonly args: pulumi.Output<string[] | undefined>;
     /**
      * Creation timestamp
      */
-    public /*out*/ readonly createTime!: pulumi.Output<string>;
+    declare public /*out*/ readonly createTime: pulumi.Output<string>;
     /**
      * ID of the deployed model
      */
-    public /*out*/ readonly deployedModelId!: pulumi.Output<string>;
+    declare public /*out*/ readonly deployedModelId: pulumi.Output<string>;
     /**
      * Configuration for deploying the model to a Vertex AI endpoint. Leave empty to upload model only for batched predictions.
      */
-    public readonly endpointModelDeployment!: pulumi.Output<outputs.resources.EndpointModelDeploymentArgs | undefined>;
+    declare public readonly endpointModelDeployment: pulumi.Output<outputs.resources.EndpointModelDeploymentArgs | undefined>;
     /**
      * Full name of the endpoint
      */
-    public /*out*/ readonly endpointName!: pulumi.Output<string>;
+    declare public /*out*/ readonly endpointName: pulumi.Output<string>;
     /**
      * Environment variables
      */
-    public readonly env!: pulumi.Output<{[key: string]: string} | undefined>;
-    public readonly healthRoute!: pulumi.Output<string | undefined>;
+    declare public readonly env: pulumi.Output<{[key: string]: string} | undefined>;
+    declare public readonly healthRoute: pulumi.Output<string | undefined>;
     /**
      * Labels for the deployment
      */
-    public readonly labels!: pulumi.Output<{[key: string]: string} | undefined>;
+    declare public readonly labels: pulumi.Output<{[key: string]: string} | undefined>;
     /**
      * Bucket URI to the model artifacts. For instance, gs://my-bucket/my-model-artifacts/ - See: https://cloud.google.com/vertex-ai/docs/training/exporting-model-artifacts
      */
-    public readonly modelArtifactsBucketUri!: pulumi.Output<string | undefined>;
+    declare public readonly modelArtifactsBucketUri: pulumi.Output<string | undefined>;
     /**
      * Vertex AI Image URL of a custom or prebuilt container model server. See: https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers
      */
-    public readonly modelImageUrl!: pulumi.Output<string>;
-    public /*out*/ readonly modelName!: pulumi.Output<string>;
+    declare public readonly modelImageUrl: pulumi.Output<string>;
+    declare public /*out*/ readonly modelName: pulumi.Output<string>;
     /**
      * Bucket URI to the schema for the model inference behavior
      */
-    public readonly modelPredictionBehaviorSchemaUri!: pulumi.Output<string | undefined>;
+    declare public readonly modelPredictionBehaviorSchemaUri: pulumi.Output<string | undefined>;
     /**
      * Bucket URI to the schema for the model input
      */
-    public readonly modelPredictionInputSchemaUri!: pulumi.Output<string | undefined>;
+    declare public readonly modelPredictionInputSchemaUri: pulumi.Output<string | undefined>;
     /**
      * Bucket URI to the schema for the model output
      */
-    public readonly modelPredictionOutputSchemaUri!: pulumi.Output<string | undefined>;
+    declare public readonly modelPredictionOutputSchemaUri: pulumi.Output<string | undefined>;
     /**
      * Port for the model server. Defaults to 8080.
      */
-    public readonly port!: pulumi.Output<number | undefined>;
-    public readonly predictRoute!: pulumi.Output<string | undefined>;
+    declare public readonly port: pulumi.Output<number | undefined>;
+    declare public readonly predictRoute: pulumi.Output<string | undefined>;
     /**
      * Google Cloud Project ID
      */
-    public readonly projectId!: pulumi.Output<string>;
+    declare public readonly projectId: pulumi.Output<string>;
     /**
      * Google Cloud region
      */
-    public readonly region!: pulumi.Output<string>;
+    declare public readonly region: pulumi.Output<string>;
     /**
      * Service account for the model. If ModelImage is pointing to a private registry, this service account must have read access to the registry.
      */
-    public readonly serviceAccount!: pulumi.Output<string>;
+    declare public readonly serviceAccount: pulumi.Output<string>;
 
     /**
      * Create a VertexModelDeployment resource with the given unique name, arguments, and options.
@@ -115,33 +115,33 @@ export class VertexModelDeployment extends pulumi.CustomResource {
         let resourceInputs: pulumi.Inputs = {};
         opts = opts || {};
         if (!opts.id) {
-            if ((!args || args.modelImageUrl === undefined) && !opts.urn) {
+            if (args?.modelImageUrl === undefined && !opts.urn) {
                 throw new Error("Missing required property 'modelImageUrl'");
             }
-            if ((!args || args.projectId === undefined) && !opts.urn) {
+            if (args?.projectId === undefined && !opts.urn) {
                 throw new Error("Missing required property 'projectId'");
             }
-            if ((!args || args.region === undefined) && !opts.urn) {
+            if (args?.region === undefined && !opts.urn) {
                 throw new Error("Missing required property 'region'");
             }
-            if ((!args || args.serviceAccount === undefined) && !opts.urn) {
+            if (args?.serviceAccount === undefined && !opts.urn) {
                 throw new Error("Missing required property 'serviceAccount'");
             }
-            resourceInputs["args"] = args ? args.args : undefined;
+            resourceInputs["args"] = args?.args;
             resourceInputs["endpointModelDeployment"] = args ? (args.endpointModelDeployment ? pulumi.output(args.endpointModelDeployment).apply(inputs.resources.endpointModelDeploymentArgsArgsProvideDefaults) : undefined) : undefined;
-            resourceInputs["env"] = args ? args.env : undefined;
-            resourceInputs["healthRoute"] = args ? args.healthRoute : undefined;
-            resourceInputs["labels"] = args ? args.labels : undefined;
-            resourceInputs["modelArtifactsBucketUri"] = args ? args.modelArtifactsBucketUri : undefined;
-            resourceInputs["modelImageUrl"] = args ? args.modelImageUrl : undefined;
-            resourceInputs["modelPredictionBehaviorSchemaUri"] = args ? args.modelPredictionBehaviorSchemaUri : undefined;
-            resourceInputs["modelPredictionInputSchemaUri"] = args ? args.modelPredictionInputSchemaUri : undefined;
-            resourceInputs["modelPredictionOutputSchemaUri"] = args ? args.modelPredictionOutputSchemaUri : undefined;
-            resourceInputs["port"] = args ? args.port : undefined;
-            resourceInputs["predictRoute"] = args ? args.predictRoute : undefined;
-            resourceInputs["projectId"] = args ? args.projectId : undefined;
-            resourceInputs["region"] = args ? args.region : undefined;
-            resourceInputs["serviceAccount"] = args ? args.serviceAccount : undefined;
+            resourceInputs["env"] = args?.env;
+            resourceInputs["healthRoute"] = args?.healthRoute;
+            resourceInputs["labels"] = args?.labels;
+            resourceInputs["modelArtifactsBucketUri"] = args?.modelArtifactsBucketUri;
+            resourceInputs["modelImageUrl"] = args?.modelImageUrl;
+            resourceInputs["modelPredictionBehaviorSchemaUri"] = args?.modelPredictionBehaviorSchemaUri;
+            resourceInputs["modelPredictionInputSchemaUri"] = args?.modelPredictionInputSchemaUri;
+            resourceInputs["modelPredictionOutputSchemaUri"] = args?.modelPredictionOutputSchemaUri;
+            resourceInputs["port"] = args?.port;
+            resourceInputs["predictRoute"] = args?.predictRoute;
+            resourceInputs["projectId"] = args?.projectId;
+            resourceInputs["region"] = args?.region;
+            resourceInputs["serviceAccount"] = args?.serviceAccount;
             resourceInputs["createTime"] = undefined /*out*/;
             resourceInputs["deployedModelId"] = undefined /*out*/;
             resourceInputs["endpointName"] = undefined /*out*/;

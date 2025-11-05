@@ -13,6 +13,98 @@ jobs:
       pull-requests: write
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Checkout the PR branch to allow pushing commits
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Check SDK generation
+        run: |
+          git status --porcelain > /tmp/before_gen_sdk.txt
+
+          make gen-sdk
+
+          # Check git status
+          git status --porcelain > /tmp/after_gen_sdk.txt
+
+          # Compare the two status files
+          if ! diff -q /tmp/before_gen_sdk.txt /tmp/after_gen_sdk.txt > /dev/null; then
+            # Get list of changed file paths
+            CHANGED_FILES=$(git status --porcelain | awk '{print $2}')
+
+            # allowed files that can be auto-committed
+            ALLOWED_FILES=("sdk/go/go.mod" "sdk/go/go.sum")
+
+            # Check if changed files are only allowed ones
+            UNAUTHORIZED_CHANGES=0
+            if [ -n "$CHANGED_FILES" ]; then
+              while IFS= read -r file; do
+                if [ -n "$file" ]; then
+                  # Check if file is in allowed list
+                  IS_ALLOWED=0
+                  for allowed_file in "${ALLOWED_FILES[@]}"; do
+                    if [ "$file" = "$allowed_file" ]; then
+                      IS_ALLOWED=1
+                      break
+                    fi
+                  done
+                  if [ "$IS_ALLOWED" -eq 0 ]; then
+                    UNAUTHORIZED_CHANGES=1
+                    break
+                  fi
+                fi
+              done <<< "$CHANGED_FILES"
+            fi
+
+            if [ "$UNAUTHORIZED_CHANGES" -eq 1 ]; then
+              echo "❌ SDK is not up to date in the repo. Make sure to run 'make gen-sdk && make gen-sdk-dockerized' and commit."
+              echo "Files changed:"
+              git status --porcelain
+              echo ""
+              exit 1
+            else
+              echo "✅ Only ${ALLOWED_FILES[@]} changed. Will commit and push to PR branch."
+            fi
+          else
+            echo "✅ SDK is up to date."
+          fi
+
+      - name: Commit and push SDK Go module changes
+        run: |
+          # Check if there are any changes
+          if [ -n "$(git status --porcelain)" ]; then
+            # Configure git user for commits
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+
+            # Set up remote URL with token for pushing
+            git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+
+            # Add only the allowed files
+            git add sdk/go/go.mod sdk/go/go.sum
+
+            # Check if there are staged changes
+            if [ -n "$(git diff --cached --name-only)" ]; then
+              PR_BRANCH="${{ github.head_ref }}"
+              git commit -m "chore: update SDK Go module dependencies [skip ci]"
+              git push origin HEAD:$PR_BRANCH
+              echo "✅ Committed and pushed SDK Go module changes to PR branch: $PR_BRANCH"
+            else
+              echo "ℹ️ No changes to commit for SDK Go modules."
+            fi
+          else
+            echo "ℹ️ No changes detected."
+          fi
+
       - name: Enable auto-merge for Dependabot PRs
         run: |
           gh pr merge --auto --squash "$PR_URL"

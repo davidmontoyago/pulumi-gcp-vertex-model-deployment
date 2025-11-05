@@ -34,44 +34,13 @@ jobs:
           # Check git status
           git status --porcelain > /tmp/after_gen_sdk.txt
 
-          # Compare the two status files
+          # Compare the two status files - fail if there are ANY changes
           if ! diff -q /tmp/before_gen_sdk.txt /tmp/after_gen_sdk.txt > /dev/null; then
-            # Get list of changed file paths
-            CHANGED_FILES=$(git status --porcelain | awk '{print $2}')
-
-            # allowed files that can be auto-committed
-            ALLOWED_FILES=("sdk/go/go.mod" "sdk/go/go.sum")
-
-            # Check if changed files are only allowed ones
-            UNVERSIONED_CHANGES=0
-            if [ -n "$CHANGED_FILES" ]; then
-              while IFS= read -r file; do
-                if [ -n "$file" ]; then
-                  # Check if file is in allowed list
-                  IS_ALLOWED=0
-                  for allowed_file in "${ALLOWED_FILES[@]}"; do
-                    if [ "$file" = "$allowed_file" ]; then
-                      IS_ALLOWED=1
-                      break
-                    fi
-                  done
-                  if [ "$IS_ALLOWED" -eq 0 ]; then
-                    UNVERSIONED_CHANGES=1
-                    break
-                  fi
-                fi
-              done <<< "$CHANGED_FILES"
-            fi
-
-            if [ "$UNVERSIONED_CHANGES" -eq 1 ]; then
-              echo "❌ SDK is not up to date in the repo. Make sure to run 'make gen-sdk && make gen-sdk-dockerized' and commit."
-              echo "Files changed:"
-              git status --porcelain
-              echo ""
-              exit 1
-            else
-              echo "✅ Only ${ALLOWED_FILES[@]} changed. These will be auto-committed by Dependabot."
-            fi
+            echo "❌ SDK is not up to date in the repo. Make sure to run 'make gen-sdk && make gen-sdk-dockerized' and commit."
+            echo "Files changed:"
+            git status --porcelain
+            echo ""
+            exit 1
           else
             echo "✅ SDK is up to date."
           fi

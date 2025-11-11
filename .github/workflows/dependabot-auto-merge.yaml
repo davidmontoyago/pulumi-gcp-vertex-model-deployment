@@ -11,6 +11,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      actions: read
 
     steps:
       - name: Checkout code
@@ -79,6 +80,7 @@ jobs:
           fi
 
       - name: Commit and push SDK Go module changes
+        id: commit_changes
         run: |
           # Check if there are any changes
           if [ -n "$(git status --porcelain)" ]; then
@@ -95,15 +97,64 @@ jobs:
             # Check if there are staged changes
             if [ -n "$(git diff --cached --name-only)" ]; then
               PR_BRANCH="${{ github.head_ref }}"
-              git commit -m "chore: update SDK Go module dependencies [skip ci]"
+
+              # Don't use [skip ci] so workflows run on the new commit
+              git commit -m "chore: update SDK Go module dependencies"
               git push origin HEAD:$PR_BRANCH
+
+              # Get the new commit SHA after pushing
+              NEW_SHA=$(git rev-parse HEAD)
               echo "✅ Committed and pushed SDK Go module changes to PR branch: $PR_BRANCH"
+              echo "committed=true" >> $GITHUB_OUTPUT
+              echo "new_sha=$NEW_SHA" >> $GITHUB_OUTPUT
             else
               echo "ℹ️ No changes to commit for SDK Go modules."
+              echo "committed=false" >> $GITHUB_OUTPUT
             fi
           else
             echo "ℹ️ No changes detected."
+            echo "committed=false" >> $GITHUB_OUTPUT
           fi
+
+      - name: Wait for Develop workflow to be registered
+        if: steps.commit_changes.outputs.committed == 'true'
+        run: |
+          WORKFLOW_FILE="develop.yaml"
+          PR_SHA="${{ steps.commit_changes.outputs.new_sha }}"
+          MAX_WAIT_SECONDS=60
+          POLL_INTERVAL_SECONDS=5
+          MAX_ITERATIONS=$((MAX_WAIT_SECONDS / POLL_INTERVAL_SECONDS))
+
+          echo "⏳ Waiting for '$WORKFLOW_FILE' workflow to be registered on commit $PR_SHA..."
+          echo "GitHub's auto-merge will wait for the workflow to complete once it's registered."
+
+          # Wait a moment for GitHub to process the push event
+          sleep 5
+
+          for i in $(seq 1 $MAX_ITERATIONS); do
+            # Check if workflow run exists for this commit
+            RUN_ID=$(gh run list \
+              --workflow="$WORKFLOW_FILE" \
+              --commit="$PR_SHA" \
+              --json databaseId \
+              --jq '.[0].databaseId' \
+              --limit 1 2>/dev/null || echo "")
+
+            if [ -n "$RUN_ID" ] && [ "$RUN_ID" != "null" ]; then
+              echo "✅ Workflow run $RUN_ID registered. GitHub auto-merge will wait for it to complete."
+              exit 0
+            fi
+
+            if [ $i -lt $MAX_ITERATIONS ]; then
+              echo "⏳ Workflow not registered yet (attempt $i/$MAX_ITERATIONS)..."
+              sleep $POLL_INTERVAL_SECONDS
+            fi
+          done
+
+          echo "⚠️ Workflow not registered after $MAX_WAIT_SECONDS seconds, but proceeding with auto-merge."
+          echo "GitHub will wait for any checks that become available."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Enable auto-merge for Dependabot PRs
         run: |

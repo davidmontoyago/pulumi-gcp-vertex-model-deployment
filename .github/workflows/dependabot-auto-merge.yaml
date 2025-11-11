@@ -162,3 +162,52 @@ jobs:
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get current version and increment patch
+        id: version
+        run: |
+          # Fetch tags from remote to ensure we have the latest
+          git fetch --tags
+
+          # Get the latest tag (version tag should start with 'v')
+          LATEST_TAG=$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || echo "v0.0.0")
+
+          # Remove 'v' prefix and split version
+          VERSION=${LATEST_TAG#v}
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+
+          # Increment patch version
+          NEW_PATCH=$((PATCH + 1))
+          NEW_VERSION="v${MAJOR}.${MINOR}.${NEW_PATCH}"
+
+          echo "current_version=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "Previous version: $LATEST_TAG"
+          echo "New version: $NEW_VERSION"
+
+      - name: Create and push tag
+        run: |
+          # Configure git user for tagging
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Set up remote URL with token for pushing
+          git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+
+          # Determine which commit to tag
+          if [ "${{ steps.commit_changes.outputs.committed }}" = "true" ]; then
+            # Tag the commit we just created
+            TAG_COMMIT="${{ steps.commit_changes.outputs.new_sha }}"
+            echo "Tagging commit $TAG_COMMIT (the commit we just created)"
+          else
+            # Tag the current HEAD (PR head commit)
+            TAG_COMMIT="HEAD"
+            echo "Tagging current HEAD (no new commit was created)"
+          fi
+
+          # Create the tag on the specific commit
+          git tag "${{ steps.version.outputs.new_version }}" "$TAG_COMMIT"
+
+          # Push the tag
+          git push origin "${{ steps.version.outputs.new_version }}"
+          echo "✅ Pushed tag ${{ steps.version.outputs.new_version }}"

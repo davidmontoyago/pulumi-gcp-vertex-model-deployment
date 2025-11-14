@@ -100,10 +100,28 @@ jobs:
 
               # Don't use [skip ci] so workflows run on the new commit
               git commit -m "chore: update SDK Go module dependencies"
+
+              # Get the commit SHA before pushing (this is the commit we're about to push)
+              NEW_SHA=$(git rev-parse HEAD)
+              echo "📝 Created commit $NEW_SHA"
+
+              # Push the commit
               git push origin HEAD:$PR_BRANCH
 
-              # Get the new commit SHA after pushing
-              NEW_SHA=$(git rev-parse HEAD)
+              # Fetch to ensure we have the latest remote state
+              git fetch origin $PR_BRANCH
+
+              # Verify the commit exists on the remote and get the remote commit SHA
+              REMOTE_SHA=$(git rev-parse origin/$PR_BRANCH)
+
+              if [ "$NEW_SHA" != "$REMOTE_SHA" ]; then
+                echo "⚠️ Warning: Local commit SHA ($NEW_SHA) differs from remote SHA ($REMOTE_SHA)"
+                echo "Using remote SHA for tagging: $REMOTE_SHA"
+                NEW_SHA="$REMOTE_SHA"
+              else
+                echo "✅ Verified commit $NEW_SHA exists on remote branch $PR_BRANCH"
+              fi
+
               echo "✅ Committed and pushed SDK Go module changes to PR branch: $PR_BRANCH"
               echo "committed=true" >> $GITHUB_OUTPUT
               echo "new_sha=$NEW_SHA" >> $GITHUB_OUTPUT
@@ -200,19 +218,68 @@ jobs:
           # Set up remote URL with token for pushing
           git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
 
+          # Fetch latest to ensure we have the most up-to-date refs
+          git fetch origin
+
+          # Ensure we're on the PR branch and it's up to date
+          PR_BRANCH="${{ github.head_ref }}"
+          git checkout -B "$PR_BRANCH" "origin/$PR_BRANCH" 2>/dev/null || git checkout "$PR_BRANCH"
+          echo "📍 Currently on branch: $(git branch --show-current)"
+          echo "📍 HEAD is at: $(git rev-parse HEAD)"
+
           # Determine which commit to tag
           if [ "${{ steps.commit_changes.outputs.committed }}" = "true" ]; then
-            # Tag the commit we just created
-            TAG_COMMIT="${{ steps.commit_changes.outputs.new_sha }}"
-            echo "Tagging commit $TAG_COMMIT (the commit we just created)"
+            # We just created a commit, so tag the current HEAD (which should be our commit)
+            # This is more reliable than using the stored SHA which might be stale
+            EXPECTED_SHA="${{ steps.commit_changes.outputs.new_sha }}"
+            CURRENT_HEAD=$(git rev-parse HEAD)
+
+            echo "Tagging the commit we just created"
+            echo "Expected SHA from commit step: $EXPECTED_SHA"
+            echo "Current HEAD SHA: $CURRENT_HEAD"
+
+            # Verify HEAD matches what we expect (or is at least the commit we created)
+            if [ "$CURRENT_HEAD" != "$EXPECTED_SHA" ]; then
+              echo "⚠️ Warning: Current HEAD ($CURRENT_HEAD) differs from expected SHA ($EXPECTED_SHA)"
+              echo "Checking if expected commit exists and is reachable..."
+
+              # Check if the expected commit exists
+              if git cat-file -e "$EXPECTED_SHA" 2>/dev/null; then
+                # Check if it's an ancestor of HEAD (meaning HEAD has moved forward)
+                if git merge-base --is-ancestor "$EXPECTED_SHA" "$CURRENT_HEAD" 2>/dev/null; then
+                  echo "✅ Expected commit is an ancestor of HEAD. New commits were added after our commit."
+                  echo "Using current HEAD ($CURRENT_HEAD) for tagging, which is the latest commit."
+                  TAG_COMMIT="$CURRENT_HEAD"
+                else
+                  echo "⚠️ Expected commit exists but is not an ancestor of HEAD. Using HEAD."
+                  TAG_COMMIT="$CURRENT_HEAD"
+                fi
+              else
+                echo "⚠️ Expected commit not found. Using current HEAD."
+                TAG_COMMIT="$CURRENT_HEAD"
+              fi
+            else
+              echo "✅ Verified: Current HEAD matches expected commit SHA"
+              TAG_COMMIT="$CURRENT_HEAD"
+            fi
+
+            # Show commit details for verification
+            echo ""
+            echo "📋 Commit that will be tagged:"
+            git log -1 --format="  SHA: %H%n  Author: %an <%ae>%n  Date: %ad%n  Message: %s" "$TAG_COMMIT"
           else
             # Tag the current HEAD (PR head commit)
             TAG_COMMIT="HEAD"
             echo "Tagging current HEAD (no new commit was created)"
+
+            # Show commit details for verification
+            echo "📋 Commit details:"
+            git log -1 --format="  SHA: %H%n  Author: %an <%ae>%n  Date: %ad%n  Message: %s" "$TAG_COMMIT"
           fi
 
           # Create the tag on the specific commit
           git tag "${{ steps.version.outputs.new_version }}" "$TAG_COMMIT"
+          echo "✅ Created tag ${{ steps.version.outputs.new_version }} on commit $TAG_COMMIT"
 
           # Push the tag
           git push origin "${{ steps.version.outputs.new_version }}"

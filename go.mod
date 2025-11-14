@@ -5,7 +5,7 @@ go 1.24.5
 require (
 	cloud.google.com/go/aiplatform v1.109.0
 	github.com/googleapis/gax-go/v2 v2.15.0
-	github.com/pulumi/pulumi-go-provider v1.1.2
+	github.com/pulumi/pulumi-go-provider v1.2.0
 	google.golang.org/api v0.256.0
 	google.golang.org/protobuf v1.36.10
 )

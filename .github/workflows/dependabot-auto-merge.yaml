@@ -20,6 +20,8 @@ jobs:
           # Checkout the PR branch to allow pushing commits
           ref: ${{ github.event.pull_request.head.ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
+          fetch-depth: 0
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -42,23 +44,13 @@ jobs:
             # Get list of changed file paths
             CHANGED_FILES=$(git status --porcelain | awk '{print $2}')
 
-            # allowed files that can be auto-committed
-            ALLOWED_FILES=("sdk/go/go.mod" "sdk/go/go.sum")
-
-            # Check if changed files are only allowed ones
+            # Check if all changed files are under sdk/ path
             UNAUTHORIZED_CHANGES=0
             if [ -n "$CHANGED_FILES" ]; then
               while IFS= read -r file; do
                 if [ -n "$file" ]; then
-                  # Check if file is in allowed list
-                  IS_ALLOWED=0
-                  for allowed_file in "${ALLOWED_FILES[@]}"; do
-                    if [ "$file" = "$allowed_file" ]; then
-                      IS_ALLOWED=1
-                      break
-                    fi
-                  done
-                  if [ "$IS_ALLOWED" -eq 0 ]; then
+                  # Check if file starts with sdk/
+                  if [[ ! "$file" =~ ^sdk/ ]]; then
                     UNAUTHORIZED_CHANGES=1
                     break
                   fi
@@ -73,13 +65,13 @@ jobs:
               echo ""
               exit 1
             else
-              echo "✅ Only ${ALLOWED_FILES[@]} changed. Will commit and push to PR branch."
+              echo "✅ Only files under sdk/ changed. Will commit and push to PR branch."
             fi
           else
             echo "✅ SDK is up to date."
           fi
 
-      - name: Commit and push SDK Go module changes
+      - name: Commit and push SDK changes
         id: commit_changes
         run: |
           # Check if there are any changes
@@ -91,15 +83,15 @@ jobs:
             # Set up remote URL with token for pushing
             git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
 
-            # Add only the allowed files
-            git add sdk/go/go.mod sdk/go/go.sum
+            # Add all files under sdk/ path
+            git add sdk/
 
             # Check if there are staged changes
             if [ -n "$(git diff --cached --name-only)" ]; then
-              PR_BRANCH="${{ github.head_ref }}"
+              PR_BRANCH="${{ github.event.pull_request.head.ref }}"
 
               # Don't use [skip ci] so workflows run on the new commit
-              git commit -m "chore: update SDK Go module dependencies"
+              git commit -m "chore: update SDK files"
 
               # Get the commit SHA before pushing (this is the commit we're about to push)
               NEW_SHA=$(git rev-parse HEAD)
@@ -122,11 +114,11 @@ jobs:
                 echo "✅ Verified commit $NEW_SHA exists on remote branch $PR_BRANCH"
               fi
 
-              echo "✅ Committed and pushed SDK Go module changes to PR branch: $PR_BRANCH"
+              echo "✅ Committed and pushed SDK changes to PR branch: $PR_BRANCH"
               echo "committed=true" >> $GITHUB_OUTPUT
               echo "new_sha=$NEW_SHA" >> $GITHUB_OUTPUT
             else
-              echo "ℹ️ No changes to commit for SDK Go modules."
+              echo "ℹ️ No changes to commit for SDK files."
               echo "committed=false" >> $GITHUB_OUTPUT
             fi
           else
@@ -134,153 +126,24 @@ jobs:
             echo "committed=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Wait for Develop workflow to be registered
-        if: steps.commit_changes.outputs.committed == 'true'
-        run: |
-          WORKFLOW_FILE="develop.yaml"
-          PR_SHA="${{ steps.commit_changes.outputs.new_sha }}"
-          MAX_WAIT_SECONDS=60
-          POLL_INTERVAL_SECONDS=5
-          MAX_ITERATIONS=$((MAX_WAIT_SECONDS / POLL_INTERVAL_SECONDS))
-
-          echo "⏳ Waiting for '$WORKFLOW_FILE' workflow to be registered on commit $PR_SHA..."
-          echo "GitHub's auto-merge will wait for the workflow to complete once it's registered."
-
-          # Wait a moment for GitHub to process the push event
-          sleep 5
-
-          for i in $(seq 1 $MAX_ITERATIONS); do
-            # Check if workflow run exists for this commit
-            RUN_ID=$(gh run list \
-              --workflow="$WORKFLOW_FILE" \
-              --commit="$PR_SHA" \
-              --json databaseId \
-              --jq '.[0].databaseId' \
-              --limit 1 2>/dev/null || echo "")
-
-            if [ -n "$RUN_ID" ] && [ "$RUN_ID" != "null" ]; then
-              echo "✅ Workflow run $RUN_ID registered. GitHub auto-merge will wait for it to complete."
-              exit 0
-            fi
-
-            if [ $i -lt $MAX_ITERATIONS ]; then
-              echo "⏳ Workflow not registered yet (attempt $i/$MAX_ITERATIONS)..."
-              sleep $POLL_INTERVAL_SECONDS
-            fi
-          done
-
-          echo "⚠️ Workflow not registered after $MAX_WAIT_SECONDS seconds, but proceeding with auto-merge."
-          echo "GitHub will wait for any checks that become available."
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Enable auto-merge for Dependabot PRs
         run: |
-          gh pr merge --auto --squash "$PR_URL"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+
+          # If we just pushed a commit, wait a moment for GitHub to recognize it
+          if [ "${{ steps.commit_changes.outputs.committed }}" == "true" ]; then
+            echo "⏳ Commit was pushed, waiting for GitHub to recognize the new commit..."
+            sleep 5
+
+            # Verify the latest commit is recognized by fetching PR info
+            LATEST_SHA=$(gh pr view "$PR_NUMBER" --json headRefOid -q .headRefOid)
+            echo "📝 Latest commit on PR: $LATEST_SHA"
+          fi
+
+          # Enable auto-merge - GitHub will merge when all checks pass on the latest commit
+          # The auto-merge system monitors the PR and will wait for checks on any new commits
+          gh pr merge "$PR_NUMBER" --auto --squash
+
+          echo "✅ Auto-merge enabled for PR #$PR_NUMBER. PR will merge automatically when all checks pass."
         env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Get current version and increment patch
-        id: version
-        run: |
-          # Fetch tags from remote to ensure we have the latest
-          git fetch --tags
-
-          # Get the latest tag (version tag should start with 'v')
-          # Use git tag -l instead of git describe to find tags regardless of current branch history
-          LATEST_TAG=$(git tag -l 'v*' | sort -V | tail -1)
-
-          # If no tags found, default to v0.0.0
-          if [ -z "$LATEST_TAG" ]; then
-            LATEST_TAG="v0.0.0"
-          fi
-
-          # Remove 'v' prefix and split version
-          VERSION=${LATEST_TAG#v}
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-
-          # Increment patch version
-          NEW_PATCH=$((PATCH + 1))
-          NEW_VERSION="v${MAJOR}.${MINOR}.${NEW_PATCH}"
-
-          echo "current_version=$LATEST_TAG" >> $GITHUB_OUTPUT
-          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "Previous version: $LATEST_TAG"
-          echo "New version: $NEW_VERSION"
-
-      - name: Create and push tag
-        run: |
-          # Configure git user for tagging
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Set up remote URL with token for pushing
-          git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
-
-          # Fetch latest to ensure we have the most up-to-date refs
-          git fetch origin
-
-          # Ensure we're on the PR branch and it's up to date
-          PR_BRANCH="${{ github.head_ref }}"
-          git checkout -B "$PR_BRANCH" "origin/$PR_BRANCH" 2>/dev/null || git checkout "$PR_BRANCH"
-          echo "📍 Currently on branch: $(git branch --show-current)"
-          echo "📍 HEAD is at: $(git rev-parse HEAD)"
-
-          # Determine which commit to tag
-          if [ "${{ steps.commit_changes.outputs.committed }}" = "true" ]; then
-            # We just created a commit, so tag the current HEAD (which should be our commit)
-            # This is more reliable than using the stored SHA which might be stale
-            EXPECTED_SHA="${{ steps.commit_changes.outputs.new_sha }}"
-            CURRENT_HEAD=$(git rev-parse HEAD)
-
-            echo "Tagging the commit we just created"
-            echo "Expected SHA from commit step: $EXPECTED_SHA"
-            echo "Current HEAD SHA: $CURRENT_HEAD"
-
-            # Verify HEAD matches what we expect (or is at least the commit we created)
-            if [ "$CURRENT_HEAD" != "$EXPECTED_SHA" ]; then
-              echo "⚠️ Warning: Current HEAD ($CURRENT_HEAD) differs from expected SHA ($EXPECTED_SHA)"
-              echo "Checking if expected commit exists and is reachable..."
-
-              # Check if the expected commit exists
-              if git cat-file -e "$EXPECTED_SHA" 2>/dev/null; then
-                # Check if it's an ancestor of HEAD (meaning HEAD has moved forward)
-                if git merge-base --is-ancestor "$EXPECTED_SHA" "$CURRENT_HEAD" 2>/dev/null; then
-                  echo "✅ Expected commit is an ancestor of HEAD. New commits were added after our commit."
-                  echo "Using current HEAD ($CURRENT_HEAD) for tagging, which is the latest commit."
-                  TAG_COMMIT="$CURRENT_HEAD"
-                else
-                  echo "⚠️ Expected commit exists but is not an ancestor of HEAD. Using HEAD."
-                  TAG_COMMIT="$CURRENT_HEAD"
-                fi
-              else
-                echo "⚠️ Expected commit not found. Using current HEAD."
-                TAG_COMMIT="$CURRENT_HEAD"
-              fi
-            else
-              echo "✅ Verified: Current HEAD matches expected commit SHA"
-              TAG_COMMIT="$CURRENT_HEAD"
-            fi
-
-            # Show commit details for verification
-            echo ""
-            echo "📋 Commit that will be tagged:"
-            git log -1 --format="  SHA: %H%n  Author: %an <%ae>%n  Date: %ad%n  Message: %s" "$TAG_COMMIT"
-          else
-            # Tag the current HEAD (PR head commit)
-            TAG_COMMIT="HEAD"
-            echo "Tagging current HEAD (no new commit was created)"
-
-            # Show commit details for verification
-            echo "📋 Commit details:"
-            git log -1 --format="  SHA: %H%n  Author: %an <%ae>%n  Date: %ad%n  Message: %s" "$TAG_COMMIT"
-          fi
-
-          # Create the tag on the specific commit
-          git tag "${{ steps.version.outputs.new_version }}" "$TAG_COMMIT"
-          echo "✅ Created tag ${{ steps.version.outputs.new_version }} on commit $TAG_COMMIT"
-
-          # Push the tag
-          git push origin "${{ steps.version.outputs.new_version }}"
-          echo "✅ Pushed tag ${{ steps.version.outputs.new_version }}"
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

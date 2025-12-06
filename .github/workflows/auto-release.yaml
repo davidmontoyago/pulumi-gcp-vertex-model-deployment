@@ -1,0 +1,23 @@
+name: Auto Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          # Use manifest config for advanced options like v-prefix tags
+          config-file: release-please-config.json
+          # Use GITHUB_TOKEN for authentication
+          token: ${{ secrets.GITHUB_TOKEN }}

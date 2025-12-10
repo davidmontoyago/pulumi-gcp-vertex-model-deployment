@@ -29,5 +29,6 @@ jobs:
         with:
           # Use manifest config for advanced options like v-prefix tags
           config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
           # Use GITHUB_TOKEN for authentication
           token: ${{ secrets.GITHUB_TOKEN }}

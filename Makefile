@@ -52,6 +52,8 @@ gen-sdk: build
 	@echo "SDKs generated successfully"
 	cd sdk/go && go mod init github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment/sdk/go && go mod tidy
 
+# gen-sdk-dockerized: Generate SDKs using Docker (Linux AMD64)
+# for local building from ARM machines to ensure consistent SDK generation
 gen-sdk-dockerized: build-dockerized
 	@echo "Generating SDKs using Docker (Linux AMD64)..."
 	@docker run --rm \

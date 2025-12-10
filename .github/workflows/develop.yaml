@@ -2,6 +2,8 @@ name: Develop
 
 on:
   push:
+    tags:
+      - "v*"
   pull_request:
 
 concurrency:
@@ -56,8 +58,6 @@ jobs:
           chart: true
           amend: true
         continue-on-error: true
-        if: |
-          github.event_name == 'push'
 
   build-pulumi-plugin:
     needs: build-and-test
@@ -176,15 +176,25 @@ jobs:
         with:
           path: artifacts
 
-      - name: Create release
+      - name: Validate artifacts exist
+        run: |
+          if [ ! -d "artifacts" ] || [ -z "$(ls -A artifacts/*/ 2>/dev/null)" ]; then
+            echo "❌ No artifacts found to upload"
+            exit 1
+          fi
+          echo "✅ Artifacts found"
+
+      - name: Verify release exists
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref_name }}
         run: |
-          gh release create "$tag" \
-              --repo="$GITHUB_REPOSITORY" \
-              --title="$tag" \
-              --generate-notes
+          if ! gh release view "$tag" &>/dev/null; then
+            echo "❌ Release $tag does not exist. Release-please should have created it."
+            echo "This workflow only uploads artifacts to existing releases."
+            exit 1
+          fi
+          echo "✅ Release $tag exists, proceeding with artifact upload"
 
       - name: Upload release assets
         env:
@@ -204,3 +214,4 @@ jobs:
               done
             fi
           done
+          echo "✅ All artifacts uploaded successfully"

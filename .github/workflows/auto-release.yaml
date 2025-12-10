@@ -18,7 +18,13 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: googleapis/release-please-action@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run release-please
+        uses: googleapis/release-please-action@v4
         id: release
         with:
           # Use manifest config for advanced options like v-prefix tags

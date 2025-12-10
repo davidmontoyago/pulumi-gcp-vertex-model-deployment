@@ -45,8 +45,10 @@ jobs:
 
           # Compare the two status files
           if ! diff -q /tmp/before_gen_sdk.txt /tmp/after_gen_sdk.txt > /dev/null; then
-            # Get list of changed file paths
-            CHANGED_FILES=$(git status --porcelain | awk '{print $2}')
+            # Get list of changed file paths (handles all git status formats including deleted files)
+            # git status --porcelain format: "XY filename" where X is staged, Y is unstaged
+            # We extract the filename part (everything after the status code)
+            CHANGED_FILES=$(git status --porcelain | sed 's/^...//')
 
             # Check if all changed files are under sdk/ path
             UNAUTHORIZED_CHANGES=0
@@ -137,11 +139,15 @@ jobs:
           # If we just pushed a commit, wait a moment for GitHub to recognize it
           if [ "${{ steps.commit_changes.outputs.committed }}" == "true" ]; then
             echo "⏳ Commit was pushed, waiting for GitHub to recognize the new commit..."
-            sleep 5
+            sleep 10
 
             # Verify the latest commit is recognized by fetching PR info
             LATEST_SHA=$(gh pr view "$PR_NUMBER" --json headRefOid -q .headRefOid)
             echo "📝 Latest commit on PR: $LATEST_SHA"
+
+            # Wait a bit more for workflows to start
+            echo "⏳ Waiting for CI workflows to start on the new commit..."
+            sleep 5
           fi
 
           # Enable auto-merge - GitHub will merge when all checks pass on the latest commit

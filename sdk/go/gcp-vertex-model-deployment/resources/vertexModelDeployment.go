@@ -8,7 +8,7 @@ import (
 	"reflect"
 
 	"errors"
-	"github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment/sdk/go/pulumi-gcp-vertex-model-deployment/internal"
+	"github.com/davidmontoyago/pulumi-gcp-vertex-model-deployment/sdk/go/gcp-vertex-model-deployment/internal"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 )
 
